@@ -18,6 +18,7 @@ Very little styling on purpose - design comes later.
     <a class="brand" href="index.php"><?= e(SITE_NAME) ?></a>
     <nav>
         <a href="index.php">Home</a>
+        <a href="signup.php">Sign up</a>
     </nav>
 </header>
 

@@ -16,3 +16,6 @@ define('DB_PASS', '');              // XAMPP default is empty. On Simply: your d
 define('DEBUG', true);                   // true = show PHP errors on screen. MUST be false on the live server
 define('TIMEZONE', 'Europe/Copenhagen');
 define('SITE_NAME', 'To Be Human');
+
+// ---- Rules ----
+define('MIN_AGE', 13);                  // youngest allowed age at sign-up
