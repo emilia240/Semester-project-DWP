@@ -1,12 +1,23 @@
 <?php
 /*
-session.php  =  starts the session safely.
+session.php  =  security headers + starts the session.
 
 PHP is STATELESS: after every page the server forgets who you are.
 A SESSION fixes that: the server keeps a small "drawer" ($_SESSION) per visitor,
 and the browser carries only a random ID (the cookie PHPSESSID) to find the drawer again.
 So the cookie is the key to the account -> we must protect it well.
 */
+
+// ---------------------------------------------------------------------
+// 1) Security headers: instructions to the browser.
+//    ("header: announce the browser where you are" - headers MUST be sent before any HTML.)
+// ---------------------------------------------------------------------
+header('X-Content-Type-Options: nosniff');          // browser must not guess file types
+header('X-Frame-Options: DENY');                    // nobody may put our site in an <iframe> (clickjacking)
+header('Referrer-Policy: same-origin');             // do not tell other sites which page you came from
+// Content-Security-Policy: only load CSS/scripts/images from our own site and never run inline <script>.
+// Even if an attacker manages to inject <script> (XSS), the browser refuses to run it.
+header("Content-Security-Policy: default-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");
 
 // ---------------------------------------------------------------------
 // 2) Session cookie settings (must be done BEFORE session_start)
@@ -24,6 +35,14 @@ session_set_cookie_params([
 ]);
 
 session_start();
+
+// ---------------------------------------------------------------------
+// 3) Idle timeout: no activity for 2 hours -> log out.
+// ---------------------------------------------------------------------
+if (isset($_SESSION['last_seen']) && (time() - $_SESSION['last_seen']) > SESSION_IDLE_SECONDS) {
+    destroy_session();   // defined below
+}
+$_SESSION['last_seen'] = time();
 
 
 /*
@@ -53,4 +72,5 @@ function destroy_session(): void
 
     // fresh, empty session (new random ID)
     session_start();
+    $_SESSION['last_seen'] = time();
 }
