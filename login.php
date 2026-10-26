@@ -110,6 +110,6 @@ require 'includes/header.php';
 
 <p>New here? <a href="signup.php">Create an account</a></p>
 <p><small>Did not get the confirmation e-mail? <a href="resend.php">Send me a new link</a>.</small></p>
-<p><small>Forgot your password? (coming next)</small></p>
+<p><small>Forgot your password? <a href="forgot.php">Reset it here</a>.</small></p>
 
 <?php require 'includes/footer.php'; ?>

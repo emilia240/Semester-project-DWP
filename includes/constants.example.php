@@ -23,6 +23,7 @@ define('BASE_URL', 'http://localhost/Semester-project-DWP');
 // ---- Rules ----
 define('MIN_AGE', 13);                  // youngest allowed age at sign-up
 define('VERIFY_TOKEN_HOURS', 24);       // how long the confirmation link works
+define('RESET_TOKEN_HOURS', 1);         // how long the "forgot password" link works (short on purpose)
 define('SESSION_IDLE_SECONDS', 7200);   // log out after 2 hours without activity
 
 // ---- E-mail ----

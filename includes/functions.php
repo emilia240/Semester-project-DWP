@@ -378,6 +378,22 @@ function send_verification_email(string $to, string $username, string $rawToken)
     return send_mail($to, 'Confirm your e-mail for ' . SITE_NAME, $body);
 }
 
+// The e-mail sent by "Forgot password" (forgot.php). The link opens reset.php.
+function send_reset_email(string $to, string $username, string $rawToken): bool
+{
+    require_once __DIR__ . '/mailer.php';
+
+    $link = BASE_URL . '/reset.php?token=' . $rawToken;
+    $body = "Hi $username,\n\n"
+          . "Someone (hopefully you) asked to reset the password of your " . SITE_NAME . " account.\n"
+          . "Open this link to choose a new password:\n\n"
+          . "$link\n\n"
+          . "The link works for " . RESET_TOKEN_HOURS . " hour(s) and only once.\n"
+          . "If this was not you, ignore this e-mail - your password stays exactly as it is.\n";
+
+    return send_mail($to, 'Reset your password for ' . SITE_NAME, $body);
+}
+
 // Fake bcrypt hash. When a login fails because the e-mail does not exist, we still run password_verify
 // against THIS, so "unknown e-mail" takes as long as "wrong password" and nobody can tell them apart by timing.
 const DUMMY_HASH = '$2y$10$ownSu4Lj409zKzKWSjbbvuBALyNQHhdUbttFfE3z/tLDgygtWVeom';
