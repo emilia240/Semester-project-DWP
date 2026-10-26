@@ -22,4 +22,6 @@ require 'includes/header.php';
     <tr><th>E-mail confirmed</th><td><?= e($user['EmailVerifiedAt']) ?></td></tr>
 </table>
 
+<p><a href="password.php">Change my password</a></p>
+
 <?php require 'includes/footer.php'; ?>

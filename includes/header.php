@@ -21,6 +21,7 @@ $navUser = logged_in() ? current_user() : null;
         <a href="index.php">Home</a>
         <?php if ($navUser): ?>
             <a href="members.php">Members</a>
+            <a href="password.php">Password</a>
             <?php if ($navUser['RoleName'] === 'admin'): ?><a href="admin.php">Admin</a><?php endif; ?>
             <!-- Logout is a small POST form with a CSRF token, so another website cannot log you out by sneaking in a link. -->
             <form class="inline" method="post" action="logout.php">
