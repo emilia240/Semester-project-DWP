@@ -4,7 +4,7 @@
 -- Run it again whenever the design changes: it drops and rebuilds everything (like the restaurant assignment).
 -- ON SIMPLY: delete the 4 lines between the LOCAL-ONLY markers below. There the database already
 -- exists, so you first click it in phpMyAdmin and then import this file. See SIMPLY_GUIDE.md.
--- Tables follow the ER diagram: Role, User. (Token comes later, with the e-mail confirmation.)
+-- Tables follow the ER diagram: Role, User, Token.
 -- More tables (Post, Comment, Board ...) are added later in their own files.
 --
 -- Notes to self:
@@ -63,4 +63,24 @@ CREATE TABLE IF NOT EXISTS `User` (
     UNIQUE KEY `uq_user_username` (`Username`),
     KEY `idx_user_role` (`RoleID`),
     CONSTRAINT `fk_user_role` FOREIGN KEY (`RoleID`) REFERENCES `Role` (`RoleID`)
+) ENGINE = InnoDB;
+
+-- ---------------------------------------------------------------------
+-- Token: e-mail confirmation (and later password reset).
+-- Only the HASH of the token is stored, like a password: if somebody
+-- steals the database they cannot use the links.
+-- User 1 --owns-- N Token (total participation: UserID is NOT NULL).
+-- Deleting a user deletes their tokens (ON DELETE CASCADE).
+-- TokenType is 'verify_email' or 'reset_password' (checked in PHP).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Token` (
+    `TokenID`   INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `UserID`    INT UNSIGNED NOT NULL,
+    `TokenHash` CHAR(64)     NOT NULL,
+    `TokenType` VARCHAR(20)  NOT NULL,
+    `ExpiresAt` DATETIME     NOT NULL,
+    PRIMARY KEY (`TokenID`),
+    UNIQUE KEY `uq_token_hash` (`TokenHash`),
+    KEY `idx_token_user` (`UserID`),
+    CONSTRAINT `fk_token_user` FOREIGN KEY (`UserID`) REFERENCES `User` (`UserID`) ON DELETE CASCADE
 ) ENGINE = InnoDB;

@@ -222,3 +222,76 @@ function validate_birthdate(string $s): string
     return '';
 }
 
+// =====================================================================
+// G. E-MAIL TOKENS (confirmation links; later also "forgot password")
+// =====================================================================
+/*
+How a token works (see the FigJam flow "Sign up" / "User clicks the link"):
+  1) make a long random string            -> goes in the e-mail link
+  2) store only its SHA-256 HASH in the DB -> a leaked database gives nobody a working link
+  3) when the link is clicked: hash what came in the URL, look for that hash, check it has not expired
+  4) after use: DELETE it (one use only)
+sha256 (not bcrypt) is fine HERE because the token is 64 random hex chars = impossible to guess,
+unlike a human password. bcrypt would make every click slower for no gain.
+*/
+function create_token(PDO $db, int $userId, string $type, int $hoursValid): string
+{
+    // remove older tokens of the same type for this user, so only the newest link works
+    $del = $db->prepare('DELETE FROM `Token` WHERE UserID = :uid AND TokenType = :type');
+    $del->execute([':uid' => $userId, ':type' => $type]);
+
+    $raw     = bin2hex(random_bytes(32));                   // what goes into the e-mail
+    $hash    = hash('sha256', $raw);                         // what goes into the database
+    $expires = date('Y-m-d H:i:s', time() + $hoursValid * 3600);
+
+    $ins = $db->prepare(
+        'INSERT INTO `Token` (UserID, TokenHash, TokenType, ExpiresAt) VALUES (:uid, :hash, :type, :exp)'
+    );
+    $ins->execute([':uid' => $userId, ':hash' => $hash, ':type' => $type, ':exp' => $expires]);
+
+    return $raw;
+}
+
+// Finds a token of the right type by its hash. Returns the Token row (with ExpiresAt) or null.
+// The caller checks the expiry, because the flowchart shows TWO different messages:
+// "Link not valid" (not found) and "Link expired" (found, but too old).
+function find_token(PDO $db, string $raw, string $type): ?array
+{
+    if (!preg_match('/^[a-f0-9]{64}$/', $raw)) {      // wrong shape = no need to even ask the database
+        return null;
+    }
+    $stmt = $db->prepare(
+        'SELECT TokenID, UserID, ExpiresAt FROM `Token`
+          WHERE TokenHash = :hash AND TokenType = :type
+          LIMIT 1'
+    );
+    $stmt->execute([':hash' => hash('sha256', $raw), ':type' => $type]);
+    return $stmt->fetch() ?: null;
+}
+
+function token_is_expired(array $token): bool
+{
+    return strtotime($token['ExpiresAt']) <= time();
+}
+
+// Throw away expired tokens (called from time to time so the table does not grow forever).
+function delete_expired_tokens(PDO $db): void
+{
+    $stmt = $db->prepare('DELETE FROM `Token` WHERE ExpiresAt < :now');
+    $stmt->execute([':now' => date('Y-m-d H:i:s')]);
+}
+
+// The e-mail sent after sign-up and on "resend".
+function send_verification_email(string $to, string $username, string $rawToken): bool
+{
+    require_once __DIR__ . '/mailer.php';
+
+    $link = BASE_URL . '/verify.php?token=' . $rawToken;
+    $body = "Hi $username,\n\n"
+          . "Welcome to " . SITE_NAME . "! Please confirm your e-mail address by opening this link:\n\n"
+          . "$link\n\n"
+          . "The link works for " . VERIFY_TOKEN_HOURS . " hours.\n"
+          . "If you did not sign up, just ignore this e-mail - nothing will happen.\n";
+
+    return send_mail($to, 'Confirm your e-mail for ' . SITE_NAME, $body);
+}

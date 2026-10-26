@@ -13,12 +13,13 @@ require 'includes/header.php';
 ?>
 
 <h1>Members only</h1>
-<p>Hello <?= e($user['FirstName'] . ' ' . $user['LastName']) ?> - you got in because you are logged in.</p>
+<p>Hello <?= e($user['FirstName'] . ' ' . $user['LastName']) ?> - you got in because you are logged in, e-mail confirmed and not banned.</p>
 
 <table>
     <tr><th>Username</th><td><?= e($user['Username']) ?></td></tr>
     <tr><th>E-mail</th><td><?= e($user['Email']) ?></td></tr>
     <tr><th>Role</th><td><?= e($user['RoleName']) ?></td></tr>
+    <tr><th>E-mail confirmed</th><td><?= e($user['EmailVerifiedAt']) ?></td></tr>
 </table>
 
 <?php require 'includes/footer.php'; ?>

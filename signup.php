@@ -7,9 +7,9 @@ Steps when the form is sent:
   2. Validate on the server -> collect error messages in $errors
   3. Is the username / e-mail already taken?
   4. Hash the password with bcrypt
-  5. INSERT the user
-  6. Redirect to the login page with an "Account created" message
-(E-mail confirmation, CSRF protection and a transaction are added in later commits.)
+  5. INSERT the user (NOT verified yet) + make a token   (one transaction)
+  6. E-mail the confirmation link
+  7. Redirect to the login page with "Check your inbox"
 */
 require_once 'includes/init.php';
 
@@ -56,7 +56,7 @@ if (is_post()) {
         }
     }
 
-    // ---- 4 + 5. hash the password and save ----
+    // ---- 4, 5, 6, 7: save ----
     if (!$errors) {
 
         // password_hash makes a salted bcrypt hash (60 characters) from the password.
@@ -65,6 +65,9 @@ if (is_post()) {
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
 
         try {
+            // A transaction = "all or nothing": if making the token fails, the user is NOT saved either.
+            $db->beginTransaction();
+
             // Named placeholders (:u, :f ...) = prepared statement. The values travel SEPARATELY from the SQL,
             // so a username like  x'; DROP TABLE User; --  is just text and can never become SQL (SQL injection).
             $stmt = $db->prepare(
@@ -80,12 +83,15 @@ if (is_post()) {
                 ':p' => $hash,
                 ':h' => date('Y-m-d H:i:s'),
             ]);
+            $userId = (int)$db->lastInsertId();     // the AUTO_INCREMENT id the database just gave the new user
 
-            // ---- 6. done: message + redirect (Post/Redirect/Get) ----
-            flash_set('success', 'Account created! You can log in now.');
-            redirect_to('login.php');
+            $rawToken = create_token($db, $userId, 'verify_email', VERIFY_TOKEN_HOURS);
+
+            $db->commit();
 
         } catch (PDOException $ex) {
+            if ($db->inTransaction()) { $db->rollBack(); }
+
             // 23000 = "integrity constraint violation" = someone took the username/e-mail in the milliseconds
             // between step 3 and now. The UNIQUE keys in the database are the real guarantee.
             if ($ex->getCode() === '23000') {
@@ -94,6 +100,21 @@ if (is_post()) {
                 error_log('signup failed: ' . $ex->getMessage());
                 $errors['form'] = 'Something went wrong on our side. Please try again later.';
             }
+        }
+
+        // ---- 6. e-mail (AFTER commit: the account exists even if the mail server is down) ----
+        if (!$errors) {
+            $sent = send_verification_email($email, $username, $rawToken);
+
+            if ($sent) {
+                flash_set('success', 'Account created! We sent a confirmation link to ' . $email . '. Open it to activate your account.');
+                if (MAIL_MODE === 'log') {
+                    flash_set('info', 'DEV MODE: no real e-mail was sent. Open logs/mail.log and copy the link.');
+                }
+            } else {
+                flash_set('warning', 'Account created, but we could not send the e-mail. Use "Send me a new link" on the login page to try again.');
+            }
+            redirect_to('login.php');
         }
     }
 }
@@ -106,7 +127,7 @@ require 'includes/header.php';
 
 <?php if (isset($errors['form'])): ?><p class="msg msg-error"><?= e($errors['form']) ?></p><?php endif; ?>
 
-<!-- The browser checks required/type first (friendly), PHP checks again (safe). -->
+<!-- novalidate is NOT used: the browser checks required/type first (friendly), PHP checks again (safe). -->
 <form method="post" action="signup.php">
     <label for="username">Username</label>
     <input id="username" name="username" value="<?= e($old['username']) ?>" required minlength="3" maxlength="50" autocomplete="username">
