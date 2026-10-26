@@ -70,6 +70,67 @@ function flash_get_all(): array
     return $all;
 }
 
+// =====================================================================
+// D. LOGIN STATE
+// =====================================================================
+
+// Is there a user id in the session? (Cheap check, does NOT ask the database.)
+function logged_in(): bool
+{
+    return isset($_SESSION['user_id']);
+}
+
+/*
+current_user() = the full, FRESH user row from the database (or null).
+We ask the database every time instead of trusting what we stored at login, because
+things can change while someone is logged in: an admin bans them, the account is deleted ...
+static = remember the answer during this one page load so we only query once.
+*/
+function current_user(): ?array
+{
+    global $db;
+    static $user = false;
+
+    if (!logged_in()) {
+        return null;
+    }
+    if ($user === false) {
+        $stmt = $db->prepare(
+            'SELECT u.UserID, u.Username, u.FirstName, u.LastName, u.Email, u.RoleID, r.RoleName,
+                    u.EmailVerifiedAt, u.IsBanned, u.BannedUntil, u.Theme
+               FROM `User` u
+               JOIN `Role` r ON r.RoleID = u.RoleID
+              WHERE u.UserID = :id
+              LIMIT 1'
+        );
+        $stmt->execute([':id' => $_SESSION['user_id']]);
+        $user = $stmt->fetch() ?: null;
+    }
+    return $user;
+}
+
+/*
+confirm_logged_in() = put this at the top of every page that is for members only.
+If nobody is logged in, the visitor is sent to the login page and the page stops there.
+(In a later commit it gets stricter: it also re-checks the database for bans.)
+Returns the user row so the page can use it.
+*/
+function confirm_logged_in(): array
+{
+    if (!logged_in()) {
+        flash_set('error', 'Please log in to see that page.');
+        redirect_to('login.php');
+    }
+
+    $user = current_user();
+
+    if ($user === null) {        // the account was deleted while the session was still alive
+        destroy_session();
+        flash_set('error', 'Your session ended. Please log in again.');
+        redirect_to('login.php');
+    }
+    return $user;
+}
 
 // =====================================================================
 // F. VALIDATION HELPERS (used by the sign-up form)
@@ -160,3 +221,4 @@ function validate_birthdate(string $s): string
     }
     return '';
 }
+

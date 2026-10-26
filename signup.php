@@ -8,10 +8,14 @@ Steps when the form is sent:
   3. Is the username / e-mail already taken?
   4. Hash the password with bcrypt
   5. INSERT the user
-  6. Redirect with a "Account created" message
+  6. Redirect to the login page with an "Account created" message
 (E-mail confirmation, CSRF protection and a transaction are added in later commits.)
 */
 require_once 'includes/init.php';
+
+if (logged_in()) {
+    redirect_to('index.php');           // already logged in? nothing to do here
+}
 
 $errors = [];
 // $old = what the user typed, so the form is not empty after an error. (Passwords are never sent back.)
@@ -78,8 +82,8 @@ if (is_post()) {
             ]);
 
             // ---- 6. done: message + redirect (Post/Redirect/Get) ----
-            flash_set('success', 'Account created!');
-            redirect_to('index.php');
+            flash_set('success', 'Account created! You can log in now.');
+            redirect_to('login.php');
 
         } catch (PDOException $ex) {
             // 23000 = "integrity constraint violation" = someone took the username/e-mail in the milliseconds

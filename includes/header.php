@@ -4,6 +4,7 @@ header.php  =  the top of every page (menu + messages).
 A page sets $pageTitle first, then requires this file.
 Very little styling on purpose - design comes later.
 */
+$navUser = logged_in() ? current_user() : null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +19,13 @@ Very little styling on purpose - design comes later.
     <a class="brand" href="index.php"><?= e(SITE_NAME) ?></a>
     <nav>
         <a href="index.php">Home</a>
-        <a href="signup.php">Sign up</a>
+        <?php if ($navUser): ?>
+            <a href="members.php">Members</a>
+            <a href="logout.php">Log out (<?= e($navUser['Username']) ?>)</a>
+        <?php else: ?>
+            <a href="login.php">Log in</a>
+            <a href="signup.php">Sign up</a>
+        <?php endif; ?>
     </nav>
 </header>
 
