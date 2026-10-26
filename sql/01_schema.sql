@@ -42,9 +42,9 @@ INSERT IGNORE INTO `Role` (`RoleID`, `RoleName`) VALUES (1, 'member'), (2, 'admi
 CREATE TABLE IF NOT EXISTS `User` (
     `UserID`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
     `RoleID`               TINYINT UNSIGNED NOT NULL DEFAULT 1,
-    `Username`             VARCHAR(30)      NOT NULL,
-    `FirstName`            VARCHAR(80)      NOT NULL,
-    `LastName`             VARCHAR(80)      NOT NULL,
+    `Username`             VARCHAR(50)      NOT NULL,
+    `FirstName`            VARCHAR(110)      NOT NULL,
+    `LastName`             VARCHAR(110)      NOT NULL,
     `Email`                VARCHAR(190)     NOT NULL,
     `Birthdate`            DATE             NOT NULL,
     `PasswordHash`         VARCHAR(255)     NOT NULL,   -- bcrypt hash, never the password

@@ -105,15 +105,15 @@ require 'includes/header.php';
 <!-- The browser checks required/type first (friendly), PHP checks again (safe). -->
 <form method="post" action="signup.php">
     <label for="username">Username</label>
-    <input id="username" name="username" value="<?= e($old['username']) ?>" required minlength="3" maxlength="30" autocomplete="username">
+    <input id="username" name="username" value="<?= e($old['username']) ?>" required minlength="3" maxlength="50" autocomplete="username">
     <?php if (isset($errors['username'])): ?><p class="err"><?= e($errors['username']) ?></p><?php endif; ?>
 
     <label for="first_name">First name</label>
-    <input id="first_name" name="first_name" value="<?= e($old['first_name']) ?>" required maxlength="80" autocomplete="given-name">
+    <input id="first_name" name="first_name" value="<?= e($old['first_name']) ?>" required maxlength="110" autocomplete="given-name">
     <?php if (isset($errors['first_name'])): ?><p class="err"><?= e($errors['first_name']) ?></p><?php endif; ?>
 
     <label for="last_name">Last name</label>
-    <input id="last_name" name="last_name" value="<?= e($old['last_name']) ?>" required maxlength="80" autocomplete="family-name">
+    <input id="last_name" name="last_name" value="<?= e($old['last_name']) ?>" required maxlength="110" autocomplete="family-name">
     <?php if (isset($errors['last_name'])): ?><p class="err"><?= e($errors['last_name']) ?></p><?php endif; ?>
 
     <label for="email">E-mail</label>
