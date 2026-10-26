@@ -109,10 +109,22 @@ function current_user(): ?array
     return $user;
 }
 
+// Is this user banned RIGHT NOW? (permanent: BannedUntil is NULL, temporary: date in the future)
+function is_banned(array $user): bool
+{
+    if ((int)$user['IsBanned'] !== 1) {
+        return false;
+    }
+    return $user['BannedUntil'] === null || strtotime($user['BannedUntil']) > time();
+}
+
 /*
 confirm_logged_in() = put this at the top of every page that is for members only.
-If nobody is logged in, the visitor is sent to the login page and the page stops there.
-(In a later commit it gets stricter: it also re-checks the database for bans.)
+It does more than "is there a session?":
+  - the user must still exist
+  - the e-mail must be confirmed
+  - the user must not be banned
+If anything is wrong the session is destroyed and the visitor goes to the login page.
 Returns the user row so the page can use it.
 */
 function confirm_logged_in(): array
@@ -124,7 +136,7 @@ function confirm_logged_in(): array
 
     $user = current_user();
 
-    if ($user === null) {        // the account was deleted while the session was still alive
+    if ($user === null || $user['EmailVerifiedAt'] === null || is_banned($user)) {
         destroy_session();
         flash_set('error', 'Your session ended. Please log in again.');
         redirect_to('login.php');
