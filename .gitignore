@@ -1,0 +1,7 @@
+# Secrets: each computer (and the live server) has its own copy
+/includes/constants.php
+
+# Dev email log (contains verification links)
+/logs/*.log
+
+.DS_Store
