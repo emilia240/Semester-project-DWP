@@ -176,6 +176,17 @@ function confirm_logged_in(): array
     return $user;
 }
 
+// Same, but the user must also have the role "admin". Used later by the admin area.
+function confirm_admin(): array
+{
+    $user = confirm_logged_in();
+    if ($user['RoleName'] !== 'admin') {
+        http_response_code(403);        // 403 = Forbidden
+        die('403 - You do not have access to this page.');
+    }
+    return $user;
+}
+
 // =====================================================================
 // E. LOGIN THROTTLING (slows down password guessing)
 // =====================================================================
