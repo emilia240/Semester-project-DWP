@@ -71,6 +71,38 @@ function flash_get_all(): array
 }
 
 // =====================================================================
+// C. CSRF PROTECTION
+// =====================================================================
+/*
+CSRF = another website tricks YOUR logged-in browser into sending a request to OUR site
+(the browser adds your cookie automatically!). Defence: every form carries a secret random
+token that only our own pages know. The other site cannot guess it.
+ 1) csrf_token()  makes/keeps one random token in the session
+ 2) csrf_field()  prints it as a hidden field in every <form>
+ 3) csrf_check()  on POST: does the submitted token match the one in the session?
+hash_equals() compares in constant time (a normal === can leak information through timing).
+*/
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));   // 64 hex characters, cryptographically secure
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+}
+
+function csrf_check(): bool
+{
+    $sent = $_POST['csrf_token'] ?? '';
+    $real = $_SESSION['csrf_token'] ?? '';
+    return is_string($sent) && $real !== '' && hash_equals($real, $sent);
+}
+
+// =====================================================================
 // D. LOGIN STATE
 // =====================================================================
 

@@ -21,7 +21,11 @@ $navUser = logged_in() ? current_user() : null;
         <a href="index.php">Home</a>
         <?php if ($navUser): ?>
             <a href="members.php">Members</a>
-            <a href="logout.php">Log out (<?= e($navUser['Username']) ?>)</a>
+            <!-- Logout is a small POST form with a CSRF token, so another website cannot log you out by sneaking in a link. -->
+            <form class="inline" method="post" action="logout.php">
+                <?= csrf_field() ?>
+                <button type="submit" class="linklike">Log out (<?= e($navUser['Username']) ?>)</button>
+            </form>
         <?php else: ?>
             <a href="login.php">Log in</a>
             <a href="signup.php">Sign up</a>

@@ -14,6 +14,11 @@ if (logged_in()) {
 $email = '';
 
 if (is_post()) {
+    if (!csrf_check()) {
+        flash_set('error', 'The form expired. Please try again.');
+        redirect_to('resend.php');
+    }
+
     $email = mb_strtolower(post_str('email'));
 
     if (validate_email($email) === '') {
@@ -58,6 +63,7 @@ require 'includes/header.php';
 <p>Type the e-mail you signed up with and we will send a fresh confirmation link.</p>
 
 <form method="post" action="resend.php">
+    <?= csrf_field() ?>
     <label for="email">E-mail</label>
     <input id="email" type="email" name="email" value="<?= e($email) ?>" required maxlength="190" autocomplete="email">
     <button type="submit">Send me a new link</button>
