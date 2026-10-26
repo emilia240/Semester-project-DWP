@@ -394,6 +394,19 @@ function send_reset_email(string $to, string $username, string $rawToken): bool
     return send_mail($to, 'Reset your password for ' . SITE_NAME, $body);
 }
 
+// A heads-up after the password was changed. If it was NOT the owner, they find out at once.
+function send_password_changed_email(string $to, string $username): bool
+{
+    require_once __DIR__ . '/mailer.php';
+
+    $body = "Hi $username,\n\n"
+          . "The password of your " . SITE_NAME . " account was just changed.\n"
+          . "If that was you, nothing more to do.\n"
+          . "If it was NOT you, reset your password right away: " . BASE_URL . "/forgot.php\n";
+
+    return send_mail($to, 'Your password was changed - ' . SITE_NAME, $body);
+}
+
 // Fake bcrypt hash. When a login fails because the e-mail does not exist, we still run password_verify
 // against THIS, so "unknown e-mail" takes as long as "wrong password" and nobody can tell them apart by timing.
 const DUMMY_HASH = '$2y$10$ownSu4Lj409zKzKWSjbbvuBALyNQHhdUbttFfE3z/tLDgygtWVeom';
