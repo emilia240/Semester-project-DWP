@@ -2,7 +2,7 @@
 /*
 login.php  =  log in with e-mail + password.        (FigJam flow: "Log in")
 
-  1. CSRF ok?
+  1. CSRF ok? Not locked out by too many failures?
   2. Find the user by e-mail
   3. password_verify(typed password, hash from the database)
   4. Correct, but e-mail not confirmed -> "Please confirm your email"
@@ -27,6 +27,9 @@ if (is_post()) {
     if (!csrf_check()) {
         $error = 'The form expired. Please try again.';
 
+    } elseif (login_is_locked()) {
+        $error = 'Too many failed attempts. Please wait a minute and try again.';
+
     } else {
         $email    = mb_strtolower(post_str('email'));
         $password = post_raw('password');
@@ -40,7 +43,12 @@ if (is_post()) {
         $user = $stmt->fetch();          // the row as an array, or false if no such e-mail
 
         // ---- 3. check the password ----
-        if (!$user || !password_verify($password, $user['PasswordHash'])) {
+        // If the e-mail does not exist we still verify against a fake hash, so both cases take equally long.
+        $hashToCheck = $user ? $user['PasswordHash'] : DUMMY_HASH;
+        $passwordOk  = password_verify($password, $hashToCheck);
+
+        if (!$user || !$passwordOk) {
+            login_register_failure();
             $error = 'Wrong e-mail or password.';
 
         } elseif ($user['EmailVerifiedAt'] === null) {
@@ -56,6 +64,14 @@ if (is_post()) {
 
         } else {
             // ---- 6. success ----
+            login_clear_failures();
+
+            // Bcrypt can get "stronger" over the years. If our settings changed since this hash was made, re-hash now.
+            if (password_needs_rehash($user['PasswordHash'], PASSWORD_BCRYPT, ['cost' => 10])) {
+                $up = $db->prepare('UPDATE `User` SET PasswordHash = :h WHERE UserID = :id');
+                $up->execute([':h' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]), ':id' => $user['UserID']]);
+            }
+
             // IMPORTANT: new session id at the moment of login. Otherwise an attacker who planted a known
             // session id in the victim's browser ("session fixation") would be logged in as the victim.
             session_regenerate_id(true);

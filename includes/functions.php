@@ -177,6 +177,33 @@ function confirm_logged_in(): array
 }
 
 // =====================================================================
+// E. LOGIN THROTTLING (slows down password guessing)
+// =====================================================================
+// Simple version: counts failures in the SESSION. A bot that throws its cookie away
+// gets around it, so a later improvement is to count per IP/email in the database.
+const MAX_LOGIN_FAILURES = 5;
+const LOGIN_LOCK_SECONDS = 60;
+
+function login_is_locked(): bool
+{
+    return isset($_SESSION['login_locked_until']) && $_SESSION['login_locked_until'] > time();
+}
+
+function login_register_failure(): void
+{
+    $_SESSION['login_failures'] = ($_SESSION['login_failures'] ?? 0) + 1;
+    if ($_SESSION['login_failures'] >= MAX_LOGIN_FAILURES) {
+        $_SESSION['login_locked_until'] = time() + LOGIN_LOCK_SECONDS;
+        $_SESSION['login_failures']     = 0;
+    }
+}
+
+function login_clear_failures(): void
+{
+    unset($_SESSION['login_failures'], $_SESSION['login_locked_until']);
+}
+
+// =====================================================================
 // F. VALIDATION HELPERS (used by the sign-up form)
 // =====================================================================
 // Rule: validate on the SERVER. HTML attributes like required/minlength can be removed
@@ -339,3 +366,7 @@ function send_verification_email(string $to, string $username, string $rawToken)
 
     return send_mail($to, 'Confirm your e-mail for ' . SITE_NAME, $body);
 }
+
+// Fake bcrypt hash. When a login fails because the e-mail does not exist, we still run password_verify
+// against THIS, so "unknown e-mail" takes as long as "wrong password" and nobody can tell them apart by timing.
+const DUMMY_HASH = '$2y$10$ownSu4Lj409zKzKWSjbbvuBALyNQHhdUbttFfE3z/tLDgygtWVeom';
