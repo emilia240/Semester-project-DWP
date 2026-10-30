@@ -19,4 +19,4 @@ if (!csrf_check()) {
 destroy_session();      // empty $_SESSION + delete the cookie + destroy (see session.php)
 
 flash_set('success', 'You are logged out. See you soon!');
-redirect_to('login.php');
+redirect_to(url('login'));

@@ -120,7 +120,7 @@ if (is_post()) {
                 } else {
                     flash_set('warning', 'Account created, but we could not send the e-mail. Use "Send me a new link" on the login page to try again.');
                 }
-                redirect_to('login.php');
+                redirect_to(url('login'));
             }
         }
     }
@@ -176,6 +176,6 @@ require 'includes/header.php';
     <button type="submit">Create account</button>
 </form>
 
-<p>Already have an account? <a href="login.php">Log in</a></p>
+<p>Already have an account? <a href="<?= e(url('login')) ?>">Log in</a></p>
 
 <?php require 'includes/footer.php'; ?>

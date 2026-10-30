@@ -46,4 +46,4 @@ try {
 }
 
 flash_set('success', 'E-mail confirmed! You can log in now.');
-redirect_to('login.php');
+redirect_to(url('login'));

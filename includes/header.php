@@ -29,7 +29,7 @@ $navUser = logged_in() ? current_user() : null;
                 <button type="submit" class="linklike">Log out (<?= e($navUser['Username']) ?>)</button>
             </form>
         <?php else: ?>
-            <a href="login.php">Log in</a>
+            <a href="<?= e(url('login')) ?>">Log in</a>
             <a href="signup.php">Sign up</a>
         <?php endif; ?>
     </nav>

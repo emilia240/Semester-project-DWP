@@ -19,7 +19,8 @@ Who may open it:
 require_once 'includes/init.php';
 
 $routes = [
-    'home' => ['HomeController', 'index', 'all'],
+    'home'  => ['HomeController', 'index', 'all'],
+    'login' => ['AuthController', 'login', 'guest'],
 ];
 
 // ?page= is user input. We only use it as a KEY to look up in our own table, never as a file name.

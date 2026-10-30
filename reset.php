@@ -82,7 +82,7 @@ if (is_post()) {
         send_password_changed_email($user['Email'], $user['Username']);
         login_clear_failures();                                 // a locked-out user can try the new password straight away
         flash_set('success', 'Password changed! You can log in with the new password now.');
-        redirect_to('login.php');
+        redirect_to(url('login'));
     }
 }
 

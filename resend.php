@@ -52,7 +52,7 @@ if (is_post()) {
     if (MAIL_MODE === 'log') {
         flash_set('info', 'DEV MODE: open logs/mail.log to find the link.');
     }
-    redirect_to('login.php');
+    redirect_to(url('login'));
 }
 
 $pageTitle = 'New confirmation link';
@@ -69,6 +69,6 @@ require 'includes/header.php';
     <button type="submit">Send me a new link</button>
 </form>
 
-<p><a href="login.php">Back to log in</a></p>
+<p><a href="<?= e(url('login')) ?>">Back to log in</a></p>
 
 <?php require 'includes/footer.php'; ?>

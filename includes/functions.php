@@ -127,16 +127,7 @@ function current_user(): ?array
         return null;
     }
     if ($user === false) {
-        $stmt = $db->prepare(
-            'SELECT u.UserID, u.Username, u.FirstName, u.LastName, u.Email, u.RoleID, r.RoleName,
-                    u.EmailVerifiedAt, u.IsBanned, u.BannedUntil, u.Theme
-               FROM `User` u
-               JOIN `Role` r ON r.RoleID = u.RoleID
-              WHERE u.UserID = :id
-              LIMIT 1'
-        );
-        $stmt->execute([':id' => $_SESSION['user_id']]);
-        $user = $stmt->fetch() ?: null;
+        $user = (new UserModel($db))->findWithRole((int)$_SESSION['user_id']);
     }
     return $user;
 }
@@ -163,7 +154,7 @@ function confirm_logged_in(): array
 {
     if (!logged_in()) {
         flash_set('error', 'Please log in to see that page.');
-        redirect_to('login.php');
+        redirect_to(url('login'));
     }
 
     $user = current_user();
@@ -171,7 +162,7 @@ function confirm_logged_in(): array
     if ($user === null || $user['EmailVerifiedAt'] === null || is_banned($user)) {
         destroy_session();
         flash_set('error', 'Your session ended. Please log in again.');
-        redirect_to('login.php');
+        redirect_to(url('login'));
     }
     return $user;
 }
