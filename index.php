@@ -1,25 +1,52 @@
 <?php
 /*
-index.php  =  the front page. Everybody may see it.
-Logged in  -> "Hello, (name)"
-Logged out -> short welcome + links
+index.php  =  the FRONT CONTROLLER: the one entrance to the site.     (design pattern from the OOP lecture)
+
+Every link on the site looks like   index.php?page=login   and ends up HERE. This file:
+  1. loads everything (includes/init.php)
+  2. looks the page up in the route table below
+  3. checks WHO may open it (the security check lives in ONE place, so no page can forget it)
+  4. creates the right controller and calls its method
+The controller does the work and shows a view. Unknown page names get a 404.
+
+Route table:   page name  =>  [ controller class,  method,  who may open it ]
+Who may open it:
+  'all'     everybody, logged in or not
+  'guest'   visitors only (a logged-in user is sent to the front page)
+  'member'  logged-in members only: e-mail confirmed, not banned (confirm_logged_in() sends the others to the login page)
+  'admin'   role admin only
 */
 require_once 'includes/init.php';
 
-$user = logged_in() ? current_user() : null;
+$routes = [
+    'home' => ['HomeController', 'index', 'all'],
+];
 
-$pageTitle = 'Home';
-require 'includes/header.php';
-?>
+// ?page= is user input. We only use it as a KEY to look up in our own table, never as a file name.
+$page = $_GET['page'] ?? 'home';
+if (!is_string($page) || !isset($routes[$page])) {
+    $page = null;
+}
 
-<?php if ($user): ?>
-    <h1>Hello, <?= e($user['FirstName']) ?>!</h1>
-    <p>You are logged in as <strong><?= e($user['Username']) ?></strong>.</p>
-    <p><a href="members.php">Go to the members page</a></p>
-<?php else: ?>
-    <h1>Welcome to <?= e(SITE_NAME) ?></h1>
-    <p>A place to share things you made by hand.</p>
-    <p><a href="signup.php">Create an account</a> or <a href="login.php">log in</a>.</p>
-<?php endif; ?>
+if ($page === null) {
+    http_response_code(404);
+    $user = logged_in() ? current_user() : null;
+    render('pages/not_found', ['title' => 'Page not found', 'user' => $user, 'page' => '404']);
+    exit;
+}
 
-<?php require 'includes/footer.php'; ?>
+[$class, $method, $access] = $routes[$page];
+
+if ($access === 'guest' && logged_in()) {
+    redirect_to(url('home'));
+}
+if ($access === 'member') {
+    $user = confirm_logged_in();
+} elseif ($access === 'admin') {
+    $user = confirm_admin();
+} else {
+    $user = logged_in() ? current_user() : null;
+}
+
+$controller = new $class($db, $user, $page);
+$controller->$method();

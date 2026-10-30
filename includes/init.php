@@ -9,6 +9,7 @@ and this file loads the rest in the right order:
   3. session.php     starts the session + security headers
   4. functions.php   helpers (e(), redirect_to(), csrf, login checks ...)
   5. view.php        helpers for the HTML side (url(), render(), partial() ...)
+  6. an autoloader, so classes in controllers/ and models/ load themselves
 The order matters: session.php uses constants, functions.php uses $db.
 */
 
@@ -37,3 +38,19 @@ require_once __DIR__ . '/connection.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/view.php';
+
+/*
+Autoloader: when the code says  new LoginController(...)  or  new UserModel(...)  and PHP does not know the class yet,
+it calls this function, which looks for  controllers/<ClassName>.php  and  models/<ClassName>.php.
+So we never write a long list of require lines. The class names come from the route table in index.php
+(written by us), never from the visitor, so this cannot be used to load other files.
+*/
+spl_autoload_register(function (string $class): void {
+    foreach (['controllers', 'models'] as $folder) {
+        $file = ROOT_PATH . '/' . $folder . '/' . $class . '.php';
+        if (is_file($file)) {
+            require_once $file;
+            return;
+        }
+    }
+});

@@ -71,7 +71,10 @@ so every check that matters is repeated in PHP.
             return document.documentElement.classList.contains('reduce-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches;
         };
 
-        items.forEach(function (item) {
+        // On a short page 14 doodles would sit on top of each other, so every second one stays hidden.
+        var short = decor.offsetHeight < 2400;
+        items.forEach(function (item, index) {
+            if (short && index % 2 === 1) { item.classList.add('hidden'); return; }
             item.style[item.getAttribute('data-side') === 'l' ? 'left' : 'right'] = item.getAttribute('data-x') + 'px';
             item.style.top = item.getAttribute('data-top') + '%';
             item.style.setProperty('--r', item.getAttribute('data-rot') + 'deg');
