@@ -26,7 +26,7 @@ partial('auth_open');
             <button type="button" class="btn btn-ghost btn-xs btn-circle" data-pw-toggle aria-label="Show password"><?= icon('eye', 18) ?></button>
         </span>
     </label>
-    <div class="text-right"><a class="link text-sm" href="forgot.php">Forgot password?</a></div>
+    <div class="text-right"><a class="link text-sm" href="<?= e(url('forgot')) ?>">Forgot password?</a></div>
     <button type="submit" class="btn btn-primary btn-lg w-full rounded-full">Log in</button>
 </form>
 <p class="mt-6 text-center">New here? <a class="link font-bold" href="<?= e(url('join')) ?>">Create a new account</a></p>

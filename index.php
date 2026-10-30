@@ -25,6 +25,8 @@ $routes = [
     'check-inbox' => ['AuthController', 'checkInbox', 'guest'],
     'verify'      => ['AuthController', 'verify', 'all'],
     'resend'      => ['AuthController', 'resend', 'guest'],
+    'forgot'      => ['AuthController', 'forgot', 'guest'],
+    'reset'       => ['AuthController', 'reset', 'all'],
 ];
 
 // ?page= is user input. We only use it as a KEY to look up in our own table, never as a file name.

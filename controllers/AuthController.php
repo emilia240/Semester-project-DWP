@@ -299,4 +299,122 @@ class AuthController extends BaseController
 
         $this->render('auth/resend', ['layout' => 'split', 'title' => 'New confirmation link', 'email' => $email]);
     }
+
+    // =================================================================
+    // FORGOT PASSWORD, step 1: ask for the link          (FigJam flow: "Forgot password (logged out)")
+    //
+    //   type e-mail -> does the e-mail have an account?
+    //       yes -> make a random token with a SHORT expiry, store its hash, e-mail the reset link
+    //       no  -> do nothing
+    //   BOTH roads end on the same message: "If the e-mail has an account, we sent a link."
+    //
+    // Why the same message: otherwise this form would tell strangers who has an account.
+    // =================================================================
+    public function forgot(): void
+    {
+        $users  = new UserModel($this->db);
+        $tokens = new TokenModel($this->db);
+        $email  = '';
+
+        if (is_post()) {
+            if (!csrf_check()) {
+                flash_set('error', 'The form expired. Please try again.');
+                redirect_to(url('forgot'));
+            }
+
+            $email = mb_strtolower(post_str('email'));
+
+            if (validate_email($email) === '') {
+                $user = $users->findByEmail($email);
+
+                // Not more than one reset e-mail per minute per account (nobody can fill an inbox through our form).
+                if ($user && !$tokens->madeInLastMinute((int)$user['UserID'], 'reset_password', RESET_TOKEN_HOURS)) {
+                    $rawToken = $tokens->create((int)$user['UserID'], 'reset_password', RESET_TOKEN_HOURS);
+                    send_reset_email($email, $user['Username'], $rawToken);
+                }
+                $tokens->deleteExpired();       // a bit of housekeeping
+            }
+
+            flash_set('success', 'If that e-mail has an account, we have sent a link to reset the password.');
+            if (MAIL_MODE === 'log') {
+                flash_set('info', 'DEV MODE: open logs/mail.log to find the link.');
+            }
+            redirect_to(url('login'));
+        }
+
+        $this->render('auth/forgot', ['layout' => 'split', 'title' => 'Forgot password', 'email' => $email]);
+    }
+
+    // =================================================================
+    // FORGOT PASSWORD, step 2: the page behind the link in the e-mail      (FigJam flow: "User clicks the reset link")
+    //
+    //   index.php?page=reset&token=3f9a...64 characters...
+    //
+    //   token not found / expired -> "Link not valid or expired"  (back to the forgot page)
+    //   token ok                  -> form: new password twice
+    //   passwords fine?  no  -> show the error, same form again
+    //                    yes -> save the new hash AND delete the token (one use only) -> "Password changed" -> Log in
+    // =================================================================
+    public function reset(): void
+    {
+        $users  = new UserModel($this->db);
+        $tokens = new TokenModel($this->db);
+
+        $raw = $_GET['token'] ?? '';
+        $raw = is_string($raw) ? trim($raw) : '';
+
+        $token = $tokens->find($raw, 'reset_password');
+
+        if ($token === null) {
+            flash_set('error', 'This link is not valid. It may have been used already. You can ask for a new one.');
+            redirect_to(url('forgot'));
+        }
+        if ($tokens->isExpired($token)) {
+            flash_set('error', 'This link has expired. You can ask for a new one.');
+            redirect_to(url('forgot'));
+        }
+
+        $user = $users->findForReset((int)$token['UserID']);
+        if (!$user) {
+            redirect_to(url('forgot'));
+        }
+
+        $error = '';
+
+        if (is_post()) {
+            $password  = post_raw('password');
+            $password2 = post_raw('password2');
+
+            if (!csrf_check()) {
+                $error = 'The form expired. Please try again.';
+
+            } elseif ($msg = validate_password($password, $user['Username'], $user['Email'])) {
+                $error = $msg;                                          // not strong enough: show the reason, same form again
+
+            } elseif ($password !== $password2) {
+                $error = 'The two passwords are not the same.';
+
+            } else {
+                try {
+                    $this->db->beginTransaction();
+                    $users->resetPassword((int)$user['UserID'], password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]));
+                    // the link is used up. Also delete a confirmation link that may still be lying around.
+                    $tokens->deleteForUser((int)$user['UserID'], ['reset_password', 'verify_email']);
+                    $this->db->commit();
+                } catch (PDOException $ex) {
+                    if ($this->db->inTransaction()) { $this->db->rollBack(); }
+                    error_log('reset failed: ' . $ex->getMessage());
+                    flash_set('error', 'Something went wrong. Please try the link again in a moment.');
+                    redirect_to(url('reset', ['token' => $raw]));
+                }
+
+                send_password_changed_email($user['Email'], $user['Username']);
+                login_clear_failures();                                 // a locked-out user can try the new password straight away
+                flash_set('success', 'Password changed! You can log in with the new password now.');
+                redirect_to(url('login'));
+            }
+        }
+
+        $this->render('auth/reset', ['layout' => 'split', 'title' => 'Choose a new password', 'error' => $error, 'rawToken' => $raw]);
+    }
 }

@@ -93,4 +93,32 @@ class UserModel
         $stmt->execute([':e' => $email]);
         return $stmt->fetch() ?: null;
     }
+
+    // "Forgot password": does this e-mail have an account? (only the columns needed for the e-mail)
+    public function findByEmail(string $email): ?array
+    {
+        $stmt = $this->db->prepare('SELECT UserID, Username FROM `User` WHERE Email = :e LIMIT 1');
+        $stmt->execute([':e' => $email]);
+        return $stmt->fetch() ?: null;
+    }
+
+    // The reset page needs the name and e-mail (the new password may not be the same as either).
+    public function findForReset(int $userId): ?array
+    {
+        $stmt = $this->db->prepare('SELECT UserID, Username, Email FROM `User` WHERE UserID = :id LIMIT 1');
+        $stmt->execute([':id' => $userId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    // Save a new password hash after "forgot password". If the e-mail was not confirmed yet, it is now:
+    // the person just proved they own the inbox (COALESCE keeps an existing date).
+    public function resetPassword(int $userId, string $hash): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE `User`
+                SET PasswordHash = :h, EmailVerifiedAt = COALESCE(EmailVerifiedAt, :now)
+              WHERE UserID = :id'
+        );
+        $stmt->execute([':h' => $hash, ':now' => date('Y-m-d H:i:s'), ':id' => $userId]);
+    }
 }
