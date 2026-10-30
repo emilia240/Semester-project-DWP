@@ -78,4 +78,19 @@ class UserModel
         ]);
         return (int)$this->db->lastInsertId();      // the AUTO_INCREMENT id the database just gave the new user
     }
+
+    // The confirmation link was opened: mark the e-mail as confirmed (only if it is not already).
+    public function markVerified(int $userId): void
+    {
+        $stmt = $this->db->prepare('UPDATE `User` SET EmailVerifiedAt = :now WHERE UserID = :id AND EmailVerifiedAt IS NULL');
+        $stmt->execute([':now' => date('Y-m-d H:i:s'), ':id' => $userId]);
+    }
+
+    // "Send me a new link": only accounts whose e-mail is NOT confirmed yet.
+    public function findUnverifiedByEmail(string $email): ?array
+    {
+        $stmt = $this->db->prepare('SELECT UserID, Username FROM `User` WHERE Email = :e AND EmailVerifiedAt IS NULL LIMIT 1');
+        $stmt->execute([':e' => $email]);
+        return $stmt->fetch() ?: null;
+    }
 }

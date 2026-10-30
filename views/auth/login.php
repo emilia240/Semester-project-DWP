@@ -8,7 +8,7 @@ partial('auth_open');
 <?php if ($error): ?>
     <div class="alert alert-error mt-6" role="alert">
         <span><?= e($error) ?>
-            <?php if ($showResend): ?><a class="link font-bold" href="resend.php">Send me a new link</a><?php endif; ?>
+            <?php if ($showResend): ?><a class="link font-bold" href="<?= e(url('resend')) ?>">Send me a new link</a><?php endif; ?>
         </span>
     </div>
 <?php endif; ?>

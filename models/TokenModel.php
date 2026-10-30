@@ -37,4 +37,55 @@ class TokenModel
 
         return $raw;
     }
+
+    // Finds a token of the right type by its hash. Returns the Token row (with ExpiresAt) or null.
+    // The caller checks the expiry, because the flowchart shows TWO different messages:
+    // "Link not valid" (not found) and "Link expired" (found, but too old).
+    public function find(string $raw, string $type): ?array
+    {
+        if (!preg_match('/^[a-f0-9]{64}$/', $raw)) {      // wrong shape = no need to even ask the database
+            return null;
+        }
+        $stmt = $this->db->prepare(
+            'SELECT TokenID, UserID, ExpiresAt FROM `Token`
+              WHERE TokenHash = :hash AND TokenType = :type
+              LIMIT 1'
+        );
+        $stmt->execute([':hash' => hash('sha256', $raw), ':type' => $type]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function isExpired(array $token): bool
+    {
+        return strtotime($token['ExpiresAt']) <= time();
+    }
+
+    // Delete all tokens of the given types for one user (used after a link was used).
+    public function deleteForUser(int $userId, array $types): void
+    {
+        foreach ($types as $type) {
+            $stmt = $this->db->prepare('DELETE FROM `Token` WHERE UserID = :id AND TokenType = :type');
+            $stmt->execute([':id' => $userId, ':type' => $type]);
+        }
+    }
+
+    // Was a token of this type made for this user in the last minute? Used to stop people from asking for e-mails
+    // again and again (nobody should be able to fill someone's inbox through our form).
+    public function madeInLastMinute(int $userId, string $type, int $hoursValid): bool
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM `Token` WHERE UserID = :id AND TokenType = :t AND ExpiresAt > :limit');
+        $stmt->execute([
+            ':id'    => $userId,
+            ':t'     => $type,
+            ':limit' => date('Y-m-d H:i:s', time() + $hoursValid * 3600 - 60),   // "still valid for more than (full time - 60 s)" = made less than a minute ago
+        ]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    // Throw away expired tokens (called from time to time so the table does not grow forever).
+    public function deleteExpired(): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM `Token` WHERE ExpiresAt < :now');
+        $stmt->execute([':now' => date('Y-m-d H:i:s')]);
+    }
 }

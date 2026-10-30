@@ -215,4 +215,88 @@ class AuthController extends BaseController
     {
         $this->render('auth/check_inbox', ['layout' => 'split', 'title' => 'Check your inbox']);
     }
+
+    // =================================================================
+    // THE LINK IN THE CONFIRMATION E-MAIL                 (FigJam flow: "User clicks the link")
+    //
+    //   index.php?page=verify&token=3f9a...64 characters...
+    //
+    //   token not found  -> "Link not valid"
+    //   token expired    -> "Link expired" + a way to get a new one
+    //   token ok         -> mark the user as confirmed, DELETE the token (one use only), "E-mail confirmed"
+    // =================================================================
+    public function verify(): void
+    {
+        $users  = new UserModel($this->db);
+        $tokens = new TokenModel($this->db);
+
+        $raw = $_GET['token'] ?? '';
+        $raw = is_string($raw) ? trim($raw) : '';          // ?token[]=x would be an array: treat it as "no token"
+
+        $token = $tokens->find($raw, 'verify_email');
+
+        if ($token === null) {
+            flash_set('error', 'This link is not valid. It may have been used already.');
+            redirect_to(url('resend'));
+        }
+        if ($tokens->isExpired($token)) {
+            flash_set('error', 'This link has expired. Request a new one below.');
+            redirect_to(url('resend'));
+        }
+
+        try {
+            $this->db->beginTransaction();
+            $users->markVerified((int)$token['UserID']);
+            $tokens->deleteForUser((int)$token['UserID'], ['verify_email']);       // one use only
+            $this->db->commit();
+        } catch (PDOException $ex) {
+            if ($this->db->inTransaction()) { $this->db->rollBack(); }
+            error_log('verify failed: ' . $ex->getMessage());
+            flash_set('error', 'Something went wrong. Please try the link again in a moment.');
+            redirect_to(url('resend'));
+        }
+
+        flash_set('success', 'E-mail confirmed! You can log in now.');
+        redirect_to(url('login'));
+    }
+
+    // =================================================================
+    // "SEND ME A NEW LINK"                                (button in the FigJam flow)
+    //
+    // The answer is ALWAYS the same sentence, whether the e-mail exists or not.
+    // Otherwise this page would be a free tool for strangers to check who has an account.
+    // =================================================================
+    public function resend(): void
+    {
+        $users  = new UserModel($this->db);
+        $tokens = new TokenModel($this->db);
+        $email  = '';
+
+        if (is_post()) {
+            if (!csrf_check()) {
+                flash_set('error', 'The form expired. Please try again.');
+                redirect_to(url('resend'));
+            }
+
+            $email = mb_strtolower(post_str('email'));
+
+            if (validate_email($email) === '') {
+                $user = $users->findUnverifiedByEmail($email);
+
+                if ($user && !$tokens->madeInLastMinute((int)$user['UserID'], 'verify_email', VERIFY_TOKEN_HOURS)) {
+                    $rawToken = $tokens->create((int)$user['UserID'], 'verify_email', VERIFY_TOKEN_HOURS);
+                    send_verification_email($email, $user['Username'], $rawToken);
+                }
+                $tokens->deleteExpired();       // a bit of housekeeping
+            }
+
+            flash_set('success', 'If that e-mail has an account that is not confirmed yet, we have sent a new link.');
+            if (MAIL_MODE === 'log') {
+                flash_set('info', 'DEV MODE: open logs/mail.log to find the link.');
+            }
+            redirect_to(url('login'));
+        }
+
+        $this->render('auth/resend', ['layout' => 'split', 'title' => 'New confirmation link', 'email' => $email]);
+    }
 }

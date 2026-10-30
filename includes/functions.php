@@ -359,7 +359,7 @@ function send_verification_email(string $to, string $username, string $rawToken)
 {
     require_once __DIR__ . '/mailer.php';
 
-    $link = BASE_URL . '/verify.php?token=' . $rawToken;
+    $link = BASE_URL . '/' . url('verify', ['token' => $rawToken]);
     $body = "Hi $username,\n\n"
           . "Welcome to " . SITE_NAME . "! Please confirm your e-mail address by opening this link:\n\n"
           . "$link\n\n"
