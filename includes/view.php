@@ -73,6 +73,12 @@ function field_attrs(array $errors, string $name): string
     return isset($errors[$name]) ? ' aria-invalid="true" aria-describedby="error-' . e($name) . '"' : '';
 }
 
+/* 'input-error' (a red border) when the field has an error, otherwise nothing. */
+function field_class(array $errors, string $name): string
+{
+    return isset($errors[$name]) ? 'input-error' : '';
+}
+
 // ---------------------------------------------------------------------
 // Small pieces
 // ---------------------------------------------------------------------

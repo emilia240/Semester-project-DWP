@@ -30,7 +30,7 @@ $navUser = logged_in() ? current_user() : null;
             </form>
         <?php else: ?>
             <a href="<?= e(url('login')) ?>">Log in</a>
-            <a href="signup.php">Sign up</a>
+            <a href="<?= e(url('join')) ?>">Sign up</a>
         <?php endif; ?>
     </nav>
 </header>

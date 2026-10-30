@@ -92,4 +92,127 @@ class AuthController extends BaseController
             'showResend' => $showResend,
         ]);
     }
+
+    // =================================================================
+    // SIGN UP ("Join us")                                 (FigJam flow: "Sign up")
+    //
+    // Steps when the form is sent:
+    //   1. CSRF token ok?
+    //   2. Read the fields (always as strings)
+    //   3. Validate on the server -> collect error messages in $errors
+    //   4. Is the username / e-mail already taken?
+    //   5. Hash the password with bcrypt
+    //   6. INSERT the user (NOT confirmed yet) + make a token   (one transaction)
+    //   7. E-mail the confirmation link
+    //   8. Redirect to the "Check your inbox" page
+    // =================================================================
+    public function join(): void
+    {
+        $users  = new UserModel($this->db);
+        $tokens = new TokenModel($this->db);
+
+        $errors = [];
+        $old = ['username' => '', 'first_name' => '', 'last_name' => '', 'email' => '', 'birthdate' => '', 'human_made' => false];
+
+        if (is_post()) {
+
+            if (!csrf_check()) {
+                $errors['form'] = 'The form expired. Please try again.';
+            } else {
+
+                $username  = post_str('username');
+                $firstName = post_str('first_name');
+                $lastName  = post_str('last_name');
+                $email     = mb_strtolower(post_str('email'));     // e-mails are compared in lower case
+                $birthdate = post_str('birthdate');
+                $password  = post_raw('password');                 // passwords are not trimmed
+                $password2 = post_raw('password2');
+                $humanMade = isset($_POST['human_made']);
+
+                // what we show again in the form if something is wrong (never the passwords!)
+                $old = ['username' => $username, 'first_name' => $firstName, 'last_name' => $lastName,
+                        'email' => $email, 'birthdate' => $birthdate, 'human_made' => $humanMade];
+
+                // ---- 3. validate (rules live in includes/functions.php, section F) ----
+                if ($msg = validate_username($username))                         { $errors['username']   = $msg; }
+                if ($msg = validate_person_name($firstName, 'First name'))       { $errors['first_name'] = $msg; }
+                if ($msg = validate_person_name($lastName, 'Last name'))         { $errors['last_name']  = $msg; }
+                if ($msg = validate_email($email))                               { $errors['email']      = $msg; }
+                if ($msg = validate_birthdate($birthdate))                       { $errors['birthdate']  = $msg; }
+                if ($msg = validate_password($password, $username, $email))      { $errors['password']   = $msg; }
+                elseif ($password !== $password2)                                { $errors['password2']  = 'The two passwords are not the same.'; }
+                if (!$humanMade)                                                 { $errors['human_made'] = 'Please confirm that you only share work you made yourself.'; }
+
+                // ---- 4. taken? (the UNIQUE keys in the database are the final guard, see the catch below) ----
+                if (!$errors) {
+                    foreach ($users->findTaken($username, $email) as $row) {
+                        if (strcasecmp($row['Username'], $username) === 0) { $errors['username'] = 'That username is taken.'; }
+                        if (strcasecmp($row['Email'], $email) === 0)       { $errors['email']    = 'That e-mail already has an account. Try logging in.'; }
+                    }
+                }
+
+                if (!$errors) {
+
+                    // ---- 5. bcrypt: slow on purpose, with its own random salt ----
+                    $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
+
+                    // ---- 6. user + token in ONE transaction: both are saved, or neither ----
+                    try {
+                        $this->db->beginTransaction();
+
+                        $userId = $users->create([
+                            'username'      => $username,
+                            'first_name'    => $firstName,
+                            'last_name'     => $lastName,
+                            'email'         => $email,
+                            'birthdate'     => $birthdate,
+                            'password_hash' => $hash,
+                        ]);
+                        $rawToken = $tokens->create($userId, 'verify_email', VERIFY_TOKEN_HOURS);
+
+                        $this->db->commit();
+
+                    } catch (PDOException $ex) {
+                        if ($this->db->inTransaction()) { $this->db->rollBack(); }
+
+                        if ($ex->getCode() === '23000') {
+                            // two people signed up with the same name at the same moment: the UNIQUE key said no
+                            $errors['form'] = 'That username or e-mail was just taken. Please try again.';
+                        } else {
+                            error_log('signup failed: ' . $ex->getMessage());      // details to the log, never to the visitor
+                            $errors['form'] = 'Something went wrong on our side. Please try again later.';
+                        }
+                    }
+
+                    // ---- 7. e-mail + 8. redirect ----
+                    if (!$errors) {
+                        $sent = send_verification_email($email, $username, $rawToken);
+
+                        if ($sent) {
+                            flash_set('success', 'Account created! We sent a confirmation link to ' . $email . '.');
+                            if (MAIL_MODE === 'log') {
+                                flash_set('info', 'DEV MODE: no real e-mail was sent. Open logs/mail.log and copy the link.');
+                            }
+                        } else {
+                            flash_set('warning', 'Account created, but we could not send the e-mail. Use "Send me a new link" to try again.');
+                        }
+                        redirect_to(url('check-inbox'));
+                    }
+                }
+            }
+        }
+
+        $this->render('auth/join', [
+            'layout' => 'split',
+            'title'  => 'Join us',
+            'errors' => $errors,
+            'old'    => $old,
+        ]);
+    }
+
+    // "Check your inbox": the page after sign-up. Nothing to do here, only to show.
+    public function checkInbox(): void
+    {
+        $this->render('auth/check_inbox', ['layout' => 'split', 'title' => 'Check your inbox']);
+    }
 }

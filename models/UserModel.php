@@ -50,4 +50,32 @@ class UserModel
         $stmt = $this->db->prepare('UPDATE `User` SET PasswordHash = :h WHERE UserID = :id');
         $stmt->execute([':h' => $hash, ':id' => $userId]);
     }
+
+    // Sign-up: which of these two are already used? Returns the matching rows (0, 1 or 2) with Username and Email.
+    public function findTaken(string $username, string $email): array
+    {
+        $stmt = $this->db->prepare('SELECT Username, Email FROM `User` WHERE Username = :u OR Email = :e');
+        $stmt->execute([':u' => $username, ':e' => $email]);
+        return $stmt->fetchAll();
+    }
+
+    // Sign-up: INSERT a new user (not confirmed yet) and return the id the database gave it.
+    // $data holds ready-to-store values: username, first_name, last_name, email, birthdate, password_hash.
+    public function create(array $data): int
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO `User` (Username, FirstName, LastName, Email, Birthdate, PasswordHash, HumanMadeConfirmedAt)
+             VALUES (:u, :f, :l, :e, :b, :p, :h)'
+        );
+        $stmt->execute([
+            ':u' => $data['username'],
+            ':f' => $data['first_name'],
+            ':l' => $data['last_name'],
+            ':e' => $data['email'],
+            ':b' => $data['birthdate'],
+            ':p' => $data['password_hash'],
+            ':h' => date('Y-m-d H:i:s'),
+        ]);
+        return (int)$this->db->lastInsertId();      // the AUTO_INCREMENT id the database just gave the new user
+    }
 }

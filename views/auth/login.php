@@ -29,5 +29,5 @@ partial('auth_open');
     <div class="text-right"><a class="link text-sm" href="forgot.php">Forgot password?</a></div>
     <button type="submit" class="btn btn-primary btn-lg w-full rounded-full">Log in</button>
 </form>
-<p class="mt-6 text-center">New here? <a class="link font-bold" href="signup.php">Create a new account</a></p>
+<p class="mt-6 text-center">New here? <a class="link font-bold" href="<?= e(url('join')) ?>">Create a new account</a></p>
 <?php partial('auth_close'); ?>
