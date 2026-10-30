@@ -8,6 +8,7 @@ and this file loads the rest in the right order:
   2. connection.php  makes $db (the PDO database connection)
   3. session.php     starts the session + security headers
   4. functions.php   helpers (e(), redirect_to(), csrf, login checks ...)
+  5. view.php        helpers for the HTML side (url(), render(), partial() ...)
 The order matters: session.php uses constants, functions.php uses $db.
 */
 
@@ -35,3 +36,4 @@ if (DEBUG) {
 require_once __DIR__ . '/connection.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/view.php';
