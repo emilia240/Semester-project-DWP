@@ -173,7 +173,8 @@ function confirm_admin(): array
     $user = confirm_logged_in();
     if ($user['RoleName'] !== 'admin') {
         http_response_code(403);        // 403 = Forbidden
-        die('403 - You do not have access to this page.');
+        render('pages/forbidden', ['title' => 'No access', 'user' => $user, 'page' => '403']);
+        exit;
     }
     return $user;
 }

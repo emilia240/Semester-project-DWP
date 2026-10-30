@@ -417,4 +417,26 @@ class AuthController extends BaseController
 
         $this->render('auth/reset', ['layout' => 'split', 'title' => 'Choose a new password', 'error' => $error, 'rawToken' => $raw]);
     }
+
+    // =================================================================
+    // LOG OUT                                              (FigJam flow: "Log out")
+    //
+    // Only accepts POST with a valid CSRF token (the "Log out" button in the menu is a tiny form).
+    // If it accepted a plain link, any website could log you out just by showing <img src="...page=logout">.
+    // =================================================================
+    public function logout(): void
+    {
+        if (!is_post()) {
+            redirect_to(url('home'));
+        }
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to(url('home'));
+        }
+
+        destroy_session();      // empty $_SESSION + delete the cookie + destroy (see includes/session.php)
+
+        flash_set('success', 'You are logged out. See you soon!');
+        redirect_to(url('login'));
+    }
 }

@@ -121,4 +121,13 @@ class UserModel
         );
         $stmt->execute([':h' => $hash, ':now' => date('Y-m-d H:i:s'), ':id' => $userId]);
     }
+
+    // Change password (logged in): the current hash is needed to check the "current password" field.
+    public function findHash(int $userId): ?string
+    {
+        $stmt = $this->db->prepare('SELECT PasswordHash FROM `User` WHERE UserID = :id LIMIT 1');
+        $stmt->execute([':id' => $userId]);
+        $hash = $stmt->fetchColumn();
+        return $hash === false ? null : (string)$hash;
+    }
 }

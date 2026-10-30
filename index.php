@@ -27,6 +27,10 @@ $routes = [
     'resend'      => ['AuthController', 'resend', 'guest'],
     'forgot'      => ['AuthController', 'forgot', 'guest'],
     'reset'       => ['AuthController', 'reset', 'all'],
+    'logout'      => ['AuthController', 'logout', 'all'],
+    'members'     => ['AccountController', 'index', 'member'],
+    'password'    => ['AccountController', 'password', 'member'],
+    'admin'       => ['AdminController', 'index', 'admin'],
 ];
 
 // ?page= is user input. We only use it as a KEY to look up in our own table, never as a file name.
