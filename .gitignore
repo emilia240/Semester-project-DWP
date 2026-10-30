@@ -5,3 +5,6 @@
 /logs/*.log
 
 .DS_Store
+
+# Node packages (only needed to build the CSS: run  npm install  once)
+/node_modules/

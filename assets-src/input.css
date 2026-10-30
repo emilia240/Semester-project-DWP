@@ -1,0 +1,136 @@
+/*
+  To Be Human - CSS source (Tailwind 4 + daisyUI 5).
+  You never edit assets/css/app.css by hand: it is BUILT from this file with  npm run build
+  Tailwind only keeps the classes it finds in the PHP files listed in the @source lines below,
+  so run  npm run build  again after you add new classes to a view.
+  (Simply has no Node, so the built app.css is committed and uploaded like any other file.)
+*/
+@import "tailwindcss";
+@source "../views";
+@source "../includes";
+@source "../assets/js";
+
+/* daisyUI with only our own two themes (light + dark) */
+@plugin "daisyui" {
+  themes: false;
+  logs: false;
+}
+
+@plugin "daisyui/theme" {
+  name: "tobehuman";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #fcfaf6;
+  --color-base-200: #f7f2ea;
+  --color-base-300: #e9e1d3;
+  --color-base-content: #2f2f2c;
+  --color-primary: #a14a26;
+  --color-primary-content: #fffaf5;
+  --color-secondary: #7e9670;
+  --color-secondary-content: #1d2a17;
+  --color-accent: #8c5a2a;
+  --color-accent-content: #fffaf5;
+  --color-neutral: #2f2f2c;
+  --color-neutral-content: #f7f2ea;
+  --color-info: #3f5d85;
+  --color-info-content: #f5f9ff;
+  --color-success: #4a6a3c;
+  --color-success-content: #f3fbef;
+  --color-warning: #d4a23a;
+  --color-warning-content: #2f2410;
+  --color-error: #a63a29;
+  --color-error-content: #fff6f3;
+  --radius-selector: 999px;
+  --radius-field: 0.85rem;
+  --radius-box: 1.15rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+  --tbh-line: #7d7870;
+}
+
+@plugin "daisyui/theme" {
+  name: "tobehuman-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: #2b2724;
+  --color-base-200: #221f1c;
+  --color-base-300: #3b352f;
+  --color-base-content: #f1e9dc;
+  --color-primary: #e08a60;
+  --color-primary-content: #24130b;
+  --color-secondary: #93ad84;
+  --color-secondary-content: #142010;
+  --color-accent: #d3a064;
+  --color-accent-content: #24170a;
+  --color-neutral: #f1e9dc;
+  --color-neutral-content: #221f1c;
+  --color-info: #8cabd0;
+  --color-info-content: #0e1a28;
+  --color-success: #93ad84;
+  --color-success-content: #142010;
+  --color-warning: #e0b04e;
+  --color-warning-content: #2a1f08;
+  --color-error: #ea8470;
+  --color-error-content: #2a0f0a;
+  --radius-selector: 999px;
+  --radius-field: 0.85rem;
+  --radius-box: 1.15rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+  --tbh-line: #9a9185;
+}
+
+/* self-hosted fonts (files in assets/fonts) */
+@font-face { font-family: "Fraunces Variable"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("../fonts/fraunces-latin-wght-normal.woff2") format("woff2-variations"); }
+@font-face { font-family: "Fraunces Variable"; font-style: italic; font-weight: 100 900; font-display: swap; src: url("../fonts/fraunces-latin-wght-italic.woff2") format("woff2-variations"); }
+@font-face { font-family: "Nunito Sans Variable"; font-style: normal; font-weight: 200 1000; font-display: swap; src: url("../fonts/nunito-sans-latin-wght-normal.woff2") format("woff2-variations"); }
+@font-face { font-family: "Nunito Sans Variable"; font-style: italic; font-weight: 200 1000; font-display: swap; src: url("../fonts/nunito-sans-latin-wght-italic.woff2") format("woff2-variations"); }
+@font-face { font-family: "Caveat Variable"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("../fonts/caveat-latin-wght-normal.woff2") format("woff2-variations"); }
+
+@font-face { font-family: "Archivo Black"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/archivo-black-latin-400-normal.woff2") format("woff2"); }
+
+@theme {
+  --font-wordmark: "Archivo Black", Impact, "Arial Black", sans-serif;
+  --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Nunito Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-hand: "Caveat Variable", "Comic Sans MS", cursive;
+}
+
+@layer base {
+  html { font-size: var(--tbh-text-size, 100%); scroll-behavior: smooth; }
+  body { font-family: var(--font-sans); background-color: var(--color-base-200); }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  a { text-underline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--color-info); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
+  html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* a few small custom pieces daisyUI does not have */
+@layer components {
+  .tbh-card { background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: var(--radius-box); }
+  /* the big "TO be HUMAN" wordmark: it always fills the full width of its box (cqw = % of the box width) */
+  .tbh-wordmark-box { container-type: inline-size; }
+  .tbh-wordmark { font-family: var(--font-wordmark); font-size: 13.55cqw; line-height: 1; white-space: nowrap; letter-spacing: -0.01em; text-transform: uppercase; margin: 0; color: var(--color-base-content); }
+  .tbh-wordmark em { font-family: var(--font-display); font-style: italic; font-weight: 500; text-transform: none; font-size: 0.92em; letter-spacing: 0; color: var(--color-accent); padding: 0 0.04em; }
+}
+
+/* ---------- accessibility: stronger lines on controls + readable muted text (checked with axe, WCAG AA) ---------- */
+.input, .textarea, .select, .btn-outline, .badge-outline, .checkbox, .radio, .toggle { border-color: var(--tbh-line); }
+.border-base-300.btn-outline, .border-base-300.badge-outline, label > .border-base-300, button.border-base-300 { border-color: var(--tbh-line); }
+.input:focus, .input:focus-within, .textarea:focus, .select:focus { border-color: var(--color-primary); }
+::placeholder { color: color-mix(in oklab, var(--color-base-content) 72%, transparent); opacity: 1; }
+.tab { color: color-mix(in oklab, var(--color-base-content) 82%, transparent); }
+.tab-active, .tab:hover { color: var(--color-base-content); }
+.table :where(thead, tfoot) th { color: color-mix(in oklab, var(--color-base-content) 85%, transparent); }
+
+/* quiet craft doodles in the page margins (views/partials/decor.php); --y and --r are set by assets/js/app.js */
+.tbh-decor { transform: translate3d(0, var(--y, 0px), 0) rotate(var(--r, 0deg)); will-change: transform; }
