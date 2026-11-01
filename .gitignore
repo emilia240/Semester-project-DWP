@@ -8,3 +8,7 @@
 
 # Node packages (only needed to build the CSS: run  npm install  once)
 /node_modules/
+
+# GitHub Copilot instructions
+.github/copilot-instructions.md
+.github/project-brief.md
