@@ -40,3 +40,9 @@ define('SMTP_USER', 'noreply@your-domain.dk');
 define('SMTP_PASS', 'CHANGE_ME');
 define('MAIL_FROM', 'noreply@your-domain.dk');
 define('MAIL_FROM_NAME', SITE_NAME);
+
+// ---- Cloudflare Turnstile ----
+// The site key is public. Keep the secret key only in the private constants.php.
+// For local testing, use the test keys from Cloudflare's Turnstile documentation.
+define('TURNSTILE_SITE_KEY', 'CHANGE_ME');
+define('TURNSTILE_SECRET_KEY', 'CHANGE_ME');

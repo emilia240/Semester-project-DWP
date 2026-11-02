@@ -72,7 +72,15 @@ partial('auth_open');
         <?= field_error($errors, 'human_made') ?>
     </div>
 
+    <?php // Cloudflare adds a one-use response to the form after its human check. ?>
+    <div>
+        <div class="cf-turnstile" data-sitekey="<?= e(TURNSTILE_SITE_KEY) ?>"></div>
+        <?= field_error($errors, 'captcha') ?>
+    </div>
+
     <button type="submit" class="btn btn-primary btn-lg w-full rounded-full">Create account <?= icon('arrow', 20) ?></button>
 </form>
+<?php // This external script displays the Turnstile widget above. ?>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <p class="mt-6 text-center">Already a member? <a class="link font-bold" href="<?= e(url('login')) ?>">Log in</a></p>
 <?php partial('auth_close'); ?>

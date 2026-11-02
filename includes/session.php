@@ -15,9 +15,9 @@ So the cookie is the key to the account -> we must protect it well.
 header('X-Content-Type-Options: nosniff');          // browser must not guess file types
 header('X-Frame-Options: DENY');                    // nobody may put our site in an <iframe> (clickjacking)
 header('Referrer-Policy: same-origin');             // do not tell other sites which page you came from
-// Content-Security-Policy: only load CSS/scripts/images from our own site and never run inline <script>.
-// Even if an attacker manages to inject <script> (XSS), the browser refuses to run it.
-header("Content-Security-Policy: default-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");
+// Content-Security-Policy: allow our own resources and no inline scripts.
+// Turnstile needs an exception for Cloudflare's script and its captcha frame.
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");
 
 // ---------------------------------------------------------------------
 // 2) Session cookie settings (must be done BEFORE session_start)

@@ -108,6 +108,8 @@ class AuthController extends BaseController
     // =================================================================
     public function join(): void
     {
+        require_once ROOT_PATH . '/includes/captcha.php';
+
         $users  = new UserModel($this->db);
         $tokens = new TokenModel($this->db);
 
@@ -142,6 +144,9 @@ class AuthController extends BaseController
                 if ($msg = validate_password($password, $username, $email))      { $errors['password']   = $msg; }
                 elseif ($password !== $password2)                                { $errors['password2']  = 'The two passwords are not the same.'; }
                 if (!$humanMade)                                                 { $errors['human_made'] = 'Please confirm that you only share work you made yourself.'; }
+
+                // Check the captcha before looking up names, so bots cannot skip it to test accounts.
+                if (!$errors && ($msg = captcha_check())) { $errors['captcha'] = $msg; }
 
                 // ---- 4. taken? (the UNIQUE keys in the database are the final guard, see the catch below) ----
                 if (!$errors) {
