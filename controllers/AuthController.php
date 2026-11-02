@@ -37,7 +37,7 @@ class AuthController extends BaseController
                 $error = 'Too many failed attempts. Please wait a minute and try again.';
 
             } else {
-                $email    = mb_strtolower(post_str('email'));
+                $email    = mb_strtolower(trim(post_str('email')), 'UTF-8');   // lower case, because the database is case-sensitive
                 $password = post_raw('password');
 
                 // ---- 2. find the user (only the columns we need) ----
@@ -123,7 +123,7 @@ class AuthController extends BaseController
                 $username  = post_str('username');
                 $firstName = post_str('first_name');
                 $lastName  = post_str('last_name');
-                $email     = mb_strtolower(post_str('email'));     // e-mails are compared in lower case
+                $email     = mb_strtolower(trim(post_str('email')), 'UTF-8');     // always saved and compared in lower case
                 $birthdate = post_str('birthdate');
                 $password  = post_raw('password');                 // passwords are not trimmed
                 $password2 = post_raw('password2');
@@ -146,8 +146,9 @@ class AuthController extends BaseController
                 // ---- 4. taken? (the UNIQUE keys in the database are the final guard, see the catch below) ----
                 if (!$errors) {
                     foreach ($users->findTaken($username, $email) as $row) {
-                        if (strcasecmp($row['Username'], $username) === 0) { $errors['username'] = 'That username is taken.'; }
-                        if (strcasecmp($row['Email'], $email) === 0)       { $errors['email']    = 'That e-mail already has an account. Try logging in.'; }
+                        // compare in lower case, because the database is case-sensitive but "Mira" and "mira" must count as the same name
+                        if (mb_strtolower($row['Username'], 'UTF-8') === mb_strtolower($username, 'UTF-8')) { $errors['username'] = 'That username is taken.'; }
+                        if ($row['Email'] === $email)                                                       { $errors['email']    = 'That e-mail already has an account. Try logging in.'; }
                     }
                 }
 
@@ -278,7 +279,7 @@ class AuthController extends BaseController
                 redirect_to(url('resend'));
             }
 
-            $email = mb_strtolower(post_str('email'));
+            $email = mb_strtolower(trim(post_str('email')), 'UTF-8');   // lower case, because the database is case-sensitive
 
             if (validate_email($email) === '') {
                 $user = $users->findUnverifiedByEmail($email);
@@ -322,7 +323,7 @@ class AuthController extends BaseController
                 redirect_to(url('forgot'));
             }
 
-            $email = mb_strtolower(post_str('email'));
+            $email = mb_strtolower(trim(post_str('email')), 'UTF-8');   // lower case, because the database is case-sensitive
 
             if (validate_email($email) === '') {
                 $user = $users->findByEmail($email);

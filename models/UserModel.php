@@ -52,9 +52,12 @@ class UserModel
     }
 
     // Sign-up: which of these two are already used? Returns the matching rows (0, 1 or 2) with Username and Email.
+    // The collation utf8mb4_bin is case-sensitive, so "Mira" and "mira" would count as two different names.
+    // LOWER() on both sides makes the username check case-insensitive. The e-mail is already lower case
+    // (the controller did that), and stored e-mails are lower case too, so a plain = is enough.
     public function findTaken(string $username, string $email): array
     {
-        $stmt = $this->db->prepare('SELECT Username, Email FROM `User` WHERE Username = :u OR Email = :e');
+        $stmt = $this->db->prepare('SELECT Username, Email FROM `User` WHERE LOWER(Username) = LOWER(:u) OR Email = :e');
         $stmt->execute([':u' => $username, ':e' => $email]);
         return $stmt->fetchAll();
     }
