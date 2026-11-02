@@ -1,6 +1,7 @@
 # To Be Human - Relational Data Model (RDM)
- Ctrl+Shift+V (preview)
- 
+
+Made from the final ER (1 Nov 2026). 24 tables, 37 foreign keys. Tested on a real MariaDB 10.11 (all tables created, all foreign keys, both CHECKs and all delete rules behave as written below). The picture is in `rdm.drawio` (ONE page with 8 sections side by side: Accounts, Posts, Likes and comments, Boards, Challenges, Reports, Notifications, Site. Tables are repeated and full in every section. Drawn like the Restaurant DB assignment: PK/FK column, plain arrows from the PK to the FK, every arrow has its own 1 (PK end) and N (FK end), dashed arrow = the FK may be empty).
+
 ## 1. How the ER became tables
 
 | ER thing | Becomes | Why |
@@ -407,4 +408,5 @@ In the report, prove one with `EXPLAIN` on 1000+ test rows (with a handful of ro
 8. **No ENUM:** `NotificationType`, `Status`, `AiCheckStatus`, `TokenType` are VARCHAR checked in PHP. If Soren wants lookup tables for these too, they become small tables like `Role`.
 9. `Theme` on `User` is VARCHAR(10) ('light' / 'dark').
 10. **Question for Soren: `UNSIGNED`.** All ids, `Position` and `SortOrder` use `UNSIGNED` integers (`INT`, `SMALLINT`, `TINYINT UNSIGNED`). UNSIGNED means the number can never be negative, so the positive range doubles (`INT`: 0 to about 4.29 billion instead of -2.1 to +2.1 billion). It exists in MySQL/MariaDB only, not in standard SQL. Keep it, or use plain `INT` / `TINYINT`? (If he says plain: remove the word UNSIGNED from the types in the RDM and the SQL.)
-11. **SQL style (1 Nov, agreed):** like the Restaurant assignment: no backticks (tested: none of the names is a reserved word), PK on the same line, comments above, multi-row `INSERT` with a column list, separate files (01 tables, 03 views and triggers). Kept on purpose: named foreign keys with `ON DELETE`, indexes, CHECKs, `ENGINE = InnoDB`. Question for Soren: `DROP DATABASE` (local) vs `DROP TABLE` per table (Simply), see the header of `01_schema.sql`.
+11. **SQL style (1 Nov, agreed):** like the Restaurant assignment: every table and column name in backticks (so `Role` and `Notification` never clash with a keyword; constraint and index names stay plain), PK on the same line, comments above, multi-row `INSERT` with a column list, separate files (01 tables, 03 views and triggers). Kept on purpose: named foreign keys with `ON DELETE`, indexes, CHECKs, `ENGINE = InnoDB`. Question for Soren: `DROP DATABASE` (local) vs `DROP TABLE` per table (Simply), see the header of `01_schema.sql`.
+12. **Decided (2 Nov): collation `utf8mb4_bin`** (Kim: "preferably utf and bin"). Before it was `utf8mb4_unicode_ci`. `_bin` compares the exact bytes, so it is case-sensitive: `Mira` and `mira` are different values, even under `UNIQUE` (tested). So PHP must (a) save and look up e-mails in lower case (`trim` + `mb_strtolower`), and (b) check usernames case-insensitively (`WHERE LOWER(Username) = LOWER(?)`) before inserting. Every table in `sql/01_schema.sql` sets `DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin` itself, so it works even if the hosting database was created with another collation (tested: a database with `utf8mb4_unicode_ci` still gets `_bin` tables).

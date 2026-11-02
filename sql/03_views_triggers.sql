@@ -32,14 +32,14 @@ DROP TRIGGER IF EXISTS trg_report_resolved;
 -- PHP: SELECT * FROM hot_posts ORDER BY HotScore DESC, UploadedAt DESC LIMIT 20;
 -- ---------------------------------------------------------------------
 CREATE VIEW hot_posts AS
-SELECT p.PostID, p.UserID, p.PostTitle, p.UploadedAt,
-       (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID AND l.LikedAt >= NOW() - INTERVAL 3 DAY)   AS LikesLast3Days,
-       (SELECT COUNT(*) FROM `Comment`  c WHERE c.PostID = p.PostID AND c.CreatedAt >= NOW() - INTERVAL 3 DAY) AS CommentsLast3Days,
-       (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID AND l.LikedAt >= NOW() - INTERVAL 3 DAY)
-     + (SELECT COUNT(*) FROM `Comment`  c WHERE c.PostID = p.PostID AND c.CreatedAt >= NOW() - INTERVAL 3 DAY) AS HotScore
+SELECT p.`PostID`, p.`UserID`, p.`PostTitle`, p.`UploadedAt`,
+       (SELECT COUNT(*) FROM `PostLike` l WHERE l.`PostID` = p.`PostID` AND l.`LikedAt` >= NOW() - INTERVAL 3 DAY)   AS LikesLast3Days,
+       (SELECT COUNT(*) FROM `Comment`  c WHERE c.`PostID` = p.`PostID` AND c.`CreatedAt` >= NOW() - INTERVAL 3 DAY) AS CommentsLast3Days,
+       (SELECT COUNT(*) FROM `PostLike` l WHERE l.`PostID` = p.`PostID` AND l.`LikedAt` >= NOW() - INTERVAL 3 DAY)
+     + (SELECT COUNT(*) FROM `Comment`  c WHERE c.`PostID` = p.`PostID` AND c.`CreatedAt` >= NOW() - INTERVAL 3 DAY) AS HotScore
 FROM `Post` p
-JOIN `User` u ON u.UserID = p.UserID
-WHERE p.IsDraft = 0 AND u.IsBanned = 0 AND u.IsProfilePublic = 1
+JOIN `User` u ON u.`UserID` = p.`UserID`
+WHERE p.`IsDraft` = 0 AND u.`IsBanned` = 0 AND u.`IsProfilePublic` = 1
 HAVING HotScore > 0;
 
 -- ---------------------------------------------------------------------
@@ -47,14 +47,14 @@ HAVING HotScore > 0;
 -- PHP: SELECT * FROM sticky_posts;
 -- ---------------------------------------------------------------------
 CREATE VIEW sticky_posts AS
-SELECT p.PostID, p.UserID, p.PostTitle, p.UploadedAt, COUNT(*) AS LikesThisWeek
+SELECT p.`PostID`, p.`UserID`, p.`PostTitle`, p.`UploadedAt`, COUNT(*) AS LikesThisWeek
 FROM `Post` p
-JOIN `User` u    ON u.UserID = p.UserID
-JOIN `PostLike` l  ON l.PostID = p.PostID
-WHERE l.LikedAt >= NOW() - INTERVAL 7 DAY
-  AND p.IsDraft = 0 AND u.IsBanned = 0 AND u.IsProfilePublic = 1
-GROUP BY p.PostID, p.UserID, p.PostTitle, p.UploadedAt
-ORDER BY LikesThisWeek DESC, p.UploadedAt DESC
+JOIN `User` u    ON u.`UserID` = p.`UserID`
+JOIN `PostLike` l  ON l.`PostID` = p.`PostID`
+WHERE l.`LikedAt` >= NOW() - INTERVAL 7 DAY
+  AND p.`IsDraft` = 0 AND u.`IsBanned` = 0 AND u.`IsProfilePublic` = 1
+GROUP BY p.`PostID`, p.`UserID`, p.`PostTitle`, p.`UploadedAt`
+ORDER BY LikesThisWeek DESC, p.`UploadedAt` DESC
 LIMIT 4;
 
 -- ---------------------------------------------------------------------
@@ -63,14 +63,14 @@ LIMIT 4;
 -- PHP: SELECT * FROM maker_of_the_week;
 -- ---------------------------------------------------------------------
 CREATE VIEW maker_of_the_week AS
-SELECT u.UserID, u.Username, u.Tagline, p.PostID, p.PostTitle,
-       (SELECT COUNT(*) FROM `PostLike`  l WHERE l.PostID = p.PostID AND l.LikedAt  >= NOW() - INTERVAL 7 DAY)
-     + (SELECT COUNT(*) FROM `BoardPost` b WHERE b.PostID = p.PostID AND b.AddedAt >= NOW() - INTERVAL 7 DAY) AS WeekScore
+SELECT u.`UserID`, u.`Username`, u.`Tagline`, p.`PostID`, p.`PostTitle`,
+       (SELECT COUNT(*) FROM `PostLike`  l WHERE l.`PostID` = p.`PostID` AND l.`LikedAt`  >= NOW() - INTERVAL 7 DAY)
+     + (SELECT COUNT(*) FROM `BoardPost` b WHERE b.`PostID` = p.`PostID` AND b.`AddedAt` >= NOW() - INTERVAL 7 DAY) AS WeekScore
 FROM `Post` p
-JOIN `User` u ON u.UserID = p.UserID
-WHERE p.IsDraft = 0 AND u.IsBanned = 0 AND u.IsProfilePublic = 1
+JOIN `User` u ON u.`UserID` = p.`UserID`
+WHERE p.`IsDraft` = 0 AND u.`IsBanned` = 0 AND u.`IsProfilePublic` = 1
 HAVING WeekScore > 0
-ORDER BY WeekScore DESC, p.UploadedAt DESC
+ORDER BY WeekScore DESC, p.`UploadedAt` DESC
 LIMIT 1;
 
 -- ---------------------------------------------------------------------
@@ -84,8 +84,8 @@ CREATE TRIGGER trg_user_default_board
 AFTER INSERT ON `User`
 FOR EACH ROW
 BEGIN
-    INSERT INTO `Board` (UserID, BoardName, IsDefault, IsPublic)
-    VALUES (NEW.UserID, 'My saved', 1, 0);
+    INSERT INTO `Board` (`UserID`, `BoardName`, `IsDefault`, `IsPublic`)
+    VALUES (NEW.`UserID`, 'My saved', 1, 0);
 END$$
 
 -- TRIGGER 2: a new comment or reply creates a Notification for the right person. Never for likes.
@@ -100,18 +100,18 @@ BEGIN
     DECLARE v_recipient INT UNSIGNED DEFAULT NULL;
     DECLARE v_type      VARCHAR(10);
 
-    IF NEW.ParentCommentID IS NULL THEN
-        SELECT UserID INTO v_recipient FROM `Post`    WHERE PostID    = NEW.PostID;
+    IF NEW.`ParentCommentID` IS NULL THEN
+        SELECT `UserID` INTO v_recipient FROM `Post`    WHERE `PostID`    = NEW.`PostID`;
         SET v_type = 'comment';
     ELSE
-        SELECT UserID INTO v_recipient FROM `Comment` WHERE CommentID = NEW.ParentCommentID;
+        SELECT `UserID` INTO v_recipient FROM `Comment` WHERE `CommentID` = NEW.`ParentCommentID`;
         SET v_type = 'reply';
     END IF;
 
-    IF v_recipient IS NOT NULL AND v_recipient <> NEW.UserID
-       AND (SELECT NotificationsOn FROM `User` WHERE UserID = v_recipient) = 1 THEN
-        INSERT INTO `Notification` (RecipientID, ActorID, CommentID, NotificationType)
-        VALUES (v_recipient, NEW.UserID, NEW.CommentID, v_type);
+    IF v_recipient IS NOT NULL AND v_recipient <> NEW.`UserID`
+       AND (SELECT `NotificationsOn` FROM `User` WHERE `UserID` = v_recipient) = 1 THEN
+        INSERT INTO `Notification` (`RecipientID`, `ActorID`, `CommentID`, `NotificationType`)
+        VALUES (v_recipient, NEW.`UserID`, NEW.`CommentID`, v_type);
     END IF;
 END$$
 
@@ -120,9 +120,9 @@ CREATE TRIGGER trg_follow_notify
 AFTER INSERT ON `Follow`
 FOR EACH ROW
 BEGIN
-    IF (SELECT NotificationsOn FROM `User` WHERE UserID = NEW.FollowedID) = 1 THEN
-        INSERT INTO `Notification` (RecipientID, ActorID, CommentID, NotificationType)
-        VALUES (NEW.FollowedID, NEW.FollowerID, NULL, 'follow');
+    IF (SELECT `NotificationsOn` FROM `User` WHERE `UserID` = NEW.`FollowedID`) = 1 THEN
+        INSERT INTO `Notification` (`RecipientID`, `ActorID`, `CommentID`, `NotificationType`)
+        VALUES (NEW.`FollowedID`, NEW.`FollowerID`, NULL, 'follow');
     END IF;
 END$$
 
@@ -132,8 +132,8 @@ CREATE TRIGGER trg_report_resolved
 BEFORE UPDATE ON `Report`
 FOR EACH ROW
 BEGIN
-    IF OLD.Status = 'open' AND NEW.Status <> 'open' AND NEW.ResolvedAt IS NULL THEN
-        SET NEW.ResolvedAt = NOW();
+    IF OLD.`Status` = 'open' AND NEW.`Status` <> 'open' AND NEW.`ResolvedAt` IS NULL THEN
+        SET NEW.`ResolvedAt` = NOW();
     END IF;
 END$$
 
