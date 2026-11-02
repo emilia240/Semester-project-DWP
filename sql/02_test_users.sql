@@ -13,3 +13,13 @@ INSERT IGNORE INTO `User`
 VALUES
     (2, 'siteadmin', 'Site', 'Owner', 'admin@example.com', '1990-01-01', '$2y$10$Dgbff9zL.5MJl0CwsUuVb.2MjaC1EGHSUawH9bfnnILQUxPEniAJW', NOW(), NOW(), 'Keeping the garden tidy'),
     (1, 'mira', 'Mira', 'Holm', 'member@example.com', '2000-05-12', '$2y$10$vMjeMeaesWAWG.3fj4iW8uAKKOJSpcNugMHPmK5K5rkmeIMIk7y9G', NOW(), NOW(), 'Ceramicist from Odense');
+
+-- These local test users have completed both join steps.
+UPDATE `User` SET `GuidelinesAcceptedAt` = NOW()
+ WHERE `Email` IN ('admin@example.com', 'member@example.com') AND `GuidelinesAcceptedAt` IS NULL;
+
+INSERT IGNORE INTO `UserCategory` (`UserID`, `CategoryID`)
+SELECT u.`UserID`, c.`CategoryID`
+  FROM `User` u
+  JOIN `Category` c ON c.`CategoryName` = 'Ceramics'
+ WHERE u.`Email` IN ('admin@example.com', 'member@example.com');

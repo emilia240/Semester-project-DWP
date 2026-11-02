@@ -179,6 +179,21 @@ function confirm_admin(): array
     return $user;
 }
 
+/*
+onboarding_next_step() finds the first unfinished join step for a logged-in member.
+The database connection is passed in so the craft check uses the existing connection.
+*/
+function onboarding_next_step(PDO $db, array $user): ?string
+{
+    if ((new CategoryModel($db))->countForUser((int)$user['UserID']) === 0) {
+        return 'join-crafts';
+    }
+    if ($user['GuidelinesAcceptedAt'] === null) {
+        return 'join-guidelines';
+    }
+    return null;
+}
+
 // =====================================================================
 // E. LOGIN THROTTLING (slows down password guessing)
 // =====================================================================

@@ -14,7 +14,9 @@ Who may open it:
   'all'     everybody, logged in or not
   'guest'   visitors only (a logged-in user is sent to the front page)
   'member'  logged-in members only: e-mail confirmed, not banned (confirm_logged_in() sends the others to the login page)
-  'admin'   role admin only
+            and the join steps are finished (otherwise they are sent to the missing step)
+  'admin'   role admin only (the join steps must be finished too)
+  'onboarding'  like 'member', but without the join-steps check for steps 2 and 3
 */
 require_once 'includes/init.php';
 
@@ -30,6 +32,8 @@ $routes = [
     'logout'      => ['AuthController', 'logout', 'all'],
     'members'     => ['AccountController', 'index', 'member'],
     'password'    => ['AccountController', 'password', 'member'],
+    'join-crafts'     => ['OnboardingController', 'crafts', 'onboarding'],        // join step 2
+    'join-guidelines' => ['OnboardingController', 'guidelines', 'onboarding'],    // join step 3
     'admin'       => ['AdminController', 'index', 'admin'],
 ];
 
@@ -51,12 +55,20 @@ if ($page === null) {
 if ($access === 'guest' && logged_in()) {
     redirect_to(url('home'));
 }
-if ($access === 'member') {
+if ($access === 'member' || $access === 'onboarding') {
     $user = confirm_logged_in();
 } elseif ($access === 'admin') {
     $user = confirm_admin();
 } else {
     $user = logged_in() ? current_user() : null;
+}
+
+// Until both join steps are finished, protected pages lead to the missing step.
+if ($access === 'member' || $access === 'admin') {
+    $missingStep = onboarding_next_step($db, $user);
+    if ($missingStep !== null) {
+        redirect_to(url($missingStep));
+    }
 }
 
 $controller = new $class($db, $user, $page);

@@ -34,7 +34,7 @@ class UserModel
     {
         $stmt = $this->db->prepare(
             'SELECT u.UserID, u.Username, u.FirstName, u.LastName, u.Email, u.RoleID, r.RoleName,
-                    u.EmailVerifiedAt, u.IsBanned, u.BannedUntil, u.Theme
+                    u.EmailVerifiedAt, u.IsBanned, u.BannedUntil, u.Theme, u.GuidelinesAcceptedAt
                FROM `User` u
                JOIN `Role` r ON r.RoleID = u.RoleID
               WHERE u.UserID = :id
@@ -86,6 +86,13 @@ class UserModel
     public function markVerified(int $userId): void
     {
         $stmt = $this->db->prepare('UPDATE `User` SET EmailVerifiedAt = :now WHERE UserID = :id AND EmailVerifiedAt IS NULL');
+        $stmt->execute([':now' => date('Y-m-d H:i:s'), ':id' => $userId]);
+    }
+
+    // Join step 3: keep the original acceptance date if the member already agreed.
+    public function acceptGuidelines(int $userId): void
+    {
+        $stmt = $this->db->prepare('UPDATE `User` SET GuidelinesAcceptedAt = :now WHERE UserID = :id AND GuidelinesAcceptedAt IS NULL');
         $stmt->execute([':now' => date('Y-m-d H:i:s'), ':id' => $userId]);
     }
 

@@ -79,7 +79,9 @@ class AuthController extends BaseController
                     $_SESSION['user_id'] = (int)$user['UserID'];    // THIS line is "being logged in"
 
                     flash_set('success', 'Welcome back, ' . $user['Username'] . '!');
-                    redirect_to(url('home'));
+                    // Send an unfinished member to the first missing join step.
+                    $missingStep = onboarding_next_step($this->db, confirm_logged_in());
+                    redirect_to(url($missingStep ?? 'home'));
                 }
             }
         }
