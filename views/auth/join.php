@@ -5,7 +5,11 @@ Every rule is checked again in PHP (AuthController::join), the HTML attributes a
 */
 partial('auth_open');
 ?>
-<p class="font-hand text-3xl text-accent">A place for you</p>
+<?php // The first step uses the same progress bar as the two later join steps. ?>
+<div class="flex items-center justify-between text-xs font-bold uppercase tracking-widest opacity-80"><span>Create account</span><span>Step 1 of 3</span></div>
+<progress class="progress progress-secondary mt-3 w-full" value="33" max="100" aria-label="Step 1 of 3"></progress>
+
+<p class="mt-8 font-hand text-3xl text-accent">A place for you</p>
 <h1 class="mt-1 text-5xl font-semibold">Come on in.</h1>
 <p class="mt-3 text-lg opacity-80">You don’t have to be an expert.<br>You just have to be you.</p>
 

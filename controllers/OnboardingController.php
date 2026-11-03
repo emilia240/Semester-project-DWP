@@ -79,7 +79,10 @@ class OnboardingController extends BaseController
 
         $errors = [];
         $rules = (new SiteSettingModel($this->db))->rules();
-        if ($rules === null) {
+        $cards = $rules === null ? [] : $this->ruleCards($rules);
+        if (!$cards) {
+            $rules = null;
+            error_log('join guidelines: no usable rule cards');
             $errors['form'] = 'The guidelines are not available right now. Please try again later.';
         }
 
@@ -100,6 +103,24 @@ class OnboardingController extends BaseController
             'title'  => 'Join: the guidelines',
             'errors' => $errors,
             'rules'  => $rules,
+            'cards'  => $cards,
         ]);
+    }
+
+    // The rules are stored as one text: each blank line starts another card.
+    // The first line is the title, and the remaining lines are its explanation.
+    private function ruleCards(string $text): array
+    {
+        // Normalise Windows and older line endings before looking for blank lines.
+        $text = str_replace(["\r\n", "\r"], "\n", trim($text));
+        $cards = [];
+        foreach (preg_split('/\n[ \t]*\n+/', $text) as $block) {
+            $lines = explode("\n", trim($block), 2);
+            $title = trim($lines[0]);
+            if ($title !== '') {
+                $cards[] = [$title, trim($lines[1] ?? '')];
+            }
+        }
+        return $cards;
     }
 }

@@ -97,4 +97,30 @@ so every check that matters is repeated in PHP.
         window.addEventListener('resize', drift);
         drift();
     }
+    /* Join step 2: update the hint and button as crafts are selected.
+       The server still checks the choices, and the form works without JavaScript. */
+    var craftForm = $('[data-min-select]');
+    if (craftForm) {
+        var craftButton = $('[data-needs-select]', craftForm);
+        var craftBoxes = $$('input[name="crafts[]"]', craftForm);
+        var craftHint = $('[data-hint]', craftForm);
+        var updateCrafts = function () {
+            var count = craftBoxes.filter(function (box) { return box.checked; }).length;
+            craftButton.disabled = count < 1;
+            craftHint.textContent = count < 1 ? 'Choose at least one to continue.' : count + ' picked. You can change this later.';
+        };
+        craftBoxes.forEach(function (box) { box.addEventListener('change', updateCrafts); });
+        updateCrafts();
+    }
+
+    /* Join step 3: enable the button after the checkbox is ticked.
+       The server checks the agreement again when the form is submitted. */
+    var guidelinesForm = $('[data-require-check]');
+    if (guidelinesForm) {
+        var agreeButton = $('[data-needs-check]', guidelinesForm);
+        var agreeBox = $('[data-pledge]', guidelinesForm);
+        var updateAgree = function () { agreeButton.disabled = !agreeBox.checked; };
+        agreeBox.addEventListener('change', updateAgree);
+        updateAgree();
+    }
 })();

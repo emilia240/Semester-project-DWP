@@ -40,6 +40,7 @@ DROP DATABASE IF EXISTS dwp_semester;      -- remove the old version, if any
 CREATE DATABASE dwp_semester CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 USE dwp_semester;                          -- switch to the new database
 -- <<< LOCAL-ONLY <<<
+SET NAMES utf8mb4;                         -- keep accented craft names when importing this file
 
 -- Start clean (children before parents is not needed because the checks are switched off for a moment)
 SET FOREIGN_KEY_CHECKS = 0;
@@ -171,19 +172,35 @@ CREATE TABLE `Category` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 INSERT INTO `Category` (`CategoryName`) VALUES
-    ('Ceramics'),
-    ('Textiles'),
+    ('Crochet'),
+    ('Knitting'),
+    ('Embroidery'),
+    ('Cross-stitch'),
+    ('Macramé'),
+    ('Weaving'),
+    ('Sewing'),
+    ('Quilting'),
+    ('Felt craft'),
+    ('Textile art'),
     ('Woodwork'),
+    ('Leatherwork'),
+    ('Metalwork'),
+    ('Glasswork'),
+    ('Ceramics'),
+    ('Clay craft'),
+    ('Sculpture'),
+    ('Beadwork'),
+    ('Jewellery'),
     ('Painting'),
     ('Drawing'),
-    ('Jewellery'),
-    ('Knitting and crochet'),
-    ('Embroidery'),
+    ('Illustration'),
+    ('Digital art'),
     ('Printmaking'),
-    ('Leatherwork'),
-    ('Glass'),
-    ('Paper crafts'),
-    ('Sculpture');
+    ('Calligraphy'),
+    ('Paper craft'),
+    ('Origami'),
+    ('Bookbinding'),
+    ('Candle making');
 
 -- ---------------------------------------------------------------------
 -- UserCategory: junction table User M:N Category = the crafts a user picked in join step 2.
@@ -504,7 +521,18 @@ CREATE TABLE `SiteSetting` (
 INSERT INTO `SiteSetting` (`SiteSettingID`, `SiteName`, `SiteDescription`, `RulesAndRegulations`, `ContactEmail`, `ContactPhone`, `ThemeName`, `AccentColour`) VALUES
     (1, 'To Be Human',
      'A photo-sharing platform for human-made arts and crafts: no ads, no AI images, just people making things.',
-     'Only share work that you made yourself with your own hands. No AI-generated images. Be kind in the comments. Do not post other people''s work as yours.',
+     -- Join step 3 shows each block as a card: the first line is its title.
+     'Post only work made by human hands
+No generative AI images, no AI-assisted fills, no AI upscaling. Photograph or scan the thing you made.
+
+Credit patterns, tutorials and teachers
+If you followed someone''s pattern or technique, name them. Sharing lineage is part of the craft.
+
+Critique the work, never the person
+Beginners post here. Be specific, be useful, and assume the maker is in the room, because they are.
+
+Report AI content instead of arguing with it
+Flag it and move on. Moderators review every report, and repeat posting means removal.',
      'hello@tobehuman.example', NULL, 'tobehuman', 'default');
 
 -- ---------------------------------------------------------------------
