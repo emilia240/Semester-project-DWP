@@ -1,0 +1,56 @@
+# Deploys the site to Simply.com every time something is pushed to main (or when you press "Run workflow" on GitHub).
+# Based on the teacher's simply-com-deploy.yml. It uploads only the files that changed since the last run.
+# NOT uploaded: the list under "exclude" below. includes/constants.php is not in the repo at all (.gitignore),
+# so it is never touched: it stays on the server exactly as you made it by hand.
+# The FTP user name and password are NOT written here: they are GitHub secrets
+# (repo -> Settings -> Secrets and variables -> Actions): SIMPLY_FTP_USERNAME and SIMPLY_FTP_PASSWORD.
+name: Deploy to Simply.com
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simply-com-deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy To Be Human
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Simply.com using FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ftp.simply.com
+          port: 21
+          protocol: ftps
+          username: ${{ secrets.SIMPLY_FTP_USERNAME }}
+          password: ${{ secrets.SIMPLY_FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: /public_html/to-be-human/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/node_modules/**
+            **/.env
+            **/.env.*
+            **/constants.php
+            **/*.md
+            LICENSE
+            package.json
+            package-lock.json
+            assets-src/**
+            docs/**
+            sql/*.sql
