@@ -1,0 +1,5 @@
+# Only the pictures made by ImageUploader (random name + .jpg) may be served from this folder.
+# Anything else (a .php file, .phtml, .html, a hidden file) is refused, so nothing in here can ever run.
+<FilesMatch "^(?!.*\.jpg$)">
+    Require all denied
+</FilesMatch>

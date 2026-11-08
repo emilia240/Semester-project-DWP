@@ -12,3 +12,9 @@
 # GitHub Copilot instructions
 .github/copilot-instructions.md
 .github/project-brief.md
+
+# Pictures uploaded by members (made by ImageUploader). They live on each computer / the server, not on GitHub.
+# Only the file that protects the folder and the empty index page are committed.
+/uploads/*
+!/uploads/.htaccess
+!/uploads/index.html
