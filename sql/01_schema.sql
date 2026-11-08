@@ -260,8 +260,8 @@ CREATE TABLE `Post` (
     `UploadedAt`           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- text for screen readers
     `AltText`              VARCHAR(200) NULL,
-    -- the "this is human-made" tick on THIS post
-    `HumanMadeConfirmedAt` DATETIME     NOT NULL,
+    -- the "this is human-made" tick on THIS post. Empty only while the post is a draft (see ck_post_published_confirmed)
+    `HumanMadeConfirmedAt` DATETIME     NULL,
     -- 1 = draft (only the owner sees it), 0 = published
     `IsDraft`              TINYINT(1)   NOT NULL DEFAULT 1,
     -- 'pending', 'passed' or 'flagged' (checked in PHP)
@@ -272,7 +272,9 @@ CREATE TABLE `Post` (
     -- the posts of one profile, newest first (also serves the FK on UserID)
     KEY idx_post_user_uploaded (`UserID`, `UploadedAt`),
     CONSTRAINT fk_post_user FOREIGN KEY (`UserID`) REFERENCES `User` (`UserID`) ON DELETE CASCADE,
-    CONSTRAINT fk_post_challenge FOREIGN KEY (`ChallengeID`) REFERENCES `Challenge` (`ChallengeID`) ON DELETE SET NULL
+    CONSTRAINT fk_post_challenge FOREIGN KEY (`ChallengeID`) REFERENCES `Challenge` (`ChallengeID`) ON DELETE SET NULL,
+    -- a published post must carry the human-made tick (a draft may still be missing it)
+    CONSTRAINT ck_post_published_confirmed CHECK (`IsDraft` = 1 OR `HumanMadeConfirmedAt` IS NOT NULL)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin;
 
 -- ---------------------------------------------------------------------

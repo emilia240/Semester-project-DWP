@@ -128,7 +128,7 @@ User joins Challenge (M:N)
 | PostDescription | TEXT | NULL |  |
 | UploadedAt | DATETIME |  | CURRENT_TIMESTAMP |
 | AltText | VARCHAR(200) | NULL |  |
-| HumanMadeConfirmedAt | DATETIME |  |  |
+| HumanMadeConfirmedAt | DATETIME | NULL (empty only while IsDraft = 1; CHECK ck_post_published_confirmed) |  |
 | IsDraft | TINYINT(1) |  | 1 |
 | AiCheckStatus | VARCHAR(15) |  | 'pending' |
 
