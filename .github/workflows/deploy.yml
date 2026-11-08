@@ -54,3 +54,4 @@ jobs:
             assets-src/**
             docs/**
             sql/*.sql
+            tests/**
