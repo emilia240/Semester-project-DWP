@@ -150,11 +150,15 @@ so every check that matters is repeated in PHP.
     document.addEventListener('click', function (e) {
         var b = e.target.closest('[data-confirm]');
         if (!b) { return; }
+        var dialog = $('#modal-confirm');
+        if (!dialog || typeof dialog.showModal !== 'function') { return; }
+        // Keep the normal confirmation link as a fallback when JavaScript cannot show a dialog.
+        e.preventDefault();
         $('#confirm-title').textContent = b.getAttribute('data-confirm');
         $('#confirm-text').textContent = b.getAttribute('data-confirm-text') || '';
         pendingForm = b.getAttribute('data-confirm-form');
         if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); }
-        $('#modal-confirm').showModal();
+        dialog.showModal();
     });
     var yes = $('#confirm-yes');
     if (yes) {

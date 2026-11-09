@@ -1,0 +1,375 @@
+<?php
+/*
+PostController  =  the pages about one post.
+
+  create       the form to make a post, and saving it           (members)     FigJam: "Create a post" (Flow 16)
+  edit         the same form, filled in, for your own post      (members)     FigJam: "Edit post" (Flow 5)
+  show         one post, with all its pictures                  (everybody)
+  delete       remove a post and its picture files              (owner or admin, POST only)
+
+The rules that matter (the buttons being hidden is NOT protection, so each of these is checked here, in PHP):
+  - the form must carry the CSRF token
+  - only the owner may edit; the owner or an admin may delete; a draft is invisible to everybody else
+  - the pictures are checked by ImageUploader BEFORE anything is written to the database
+  - if saving fails halfway, the picture files that were just written are deleted again
+*/
+class PostController extends BaseController
+{
+    public const MAX_CATEGORIES = 3;
+    public const MAX_STEP_PHOTOS = 6;     // plus the cover = 7 pictures per post
+    public const MAX_TAGS = 8;
+
+    // =================================================================
+    //   One post
+    // =================================================================
+    public function show(): void
+    {
+        $post = $this->findFromQuery();
+        // A draft belongs to its owner. Everybody else gets "not found", not "forbidden", so they cannot even tell it exists.
+        if ($post === null || ($post['IsDraft'] && !$this->isOwner($post))) {
+            $this->notFound();
+            return;
+        }
+        $this->render('post/show', [
+            'title' => $post['PostTitle'],
+            'post'  => $post,
+            'mine'  => $this->isOwner($post),
+            'canDelete' => $this->isOwner($post) || $this->isAdmin(),
+        ]);
+    }
+
+    // =================================================================
+    //   New post / edit post (one form for both)
+    // =================================================================
+    public function create(): void
+    {
+        $this->form(null);
+    }
+
+    public function edit(): void
+    {
+        $post = $this->findFromQuery();
+        if ($post === null || ($post['IsDraft'] && !$this->isOwner($post))) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->isOwner($post)) {                 // somebody typed the address of another member's post
+            http_response_code(403);
+            $this->render('pages/forbidden', ['title' => 'No access']);
+            return;
+        }
+        $this->form($post);
+    }
+
+    // $post = the post being edited, or null for a new one.
+    private function form(?array $post): void
+    {
+        $posts      = new PostModel($this->db);
+        $categories = (new CategoryModel($this->db))->all();
+        $challenge  = $posts->activeChallenge();
+        $errors     = [];
+        $old        = $this->valuesFromPost($post);
+
+        if (is_post()) {
+            if (ImageUploader::requestTooBig()) {
+                // Over post_max_size PHP throws away the WHOLE form (also the CSRF token), so this must be checked FIRST,
+                // or the visitor would be told "the form expired", which is not true.
+                $errors['form'] = 'The pictures together are too big to send in one go. Try fewer or smaller pictures.';
+
+            } elseif (!csrf_check()) {
+                $errors['form'] = 'The form expired. Please try again.';
+
+            } else {
+                $old    = $this->valuesFromForm($post);
+                $errors = $this->validate($old, $post, $posts, $challenge);
+                if (!$errors) {
+                    $errors = $this->save($posts, $post, $old, $challenge);
+                }
+            }
+        }
+
+        $this->render('post/form', [
+            'title'      => $post ? 'Edit your post' : 'New post',
+            'edit'       => $post,
+            'old'        => $old,
+            'errors'     => $errors,
+            'categories' => $categories,
+            'challenge'  => $challenge,
+            'fileLimit'  => ImageUploader::fileLimitText(),
+        ]);
+    }
+
+    // The values to show in the form when it is opened (not submitted yet).
+    private function valuesFromPost(?array $post): array
+    {
+        if ($post === null) {
+            return ['title' => '', 'description' => '', 'alt' => '', 'categories' => [], 'tags' => [], 'humanMade' => false, 'challenge' => false, 'isDraft' => false, 'remove' => []];
+        }
+        return [
+            'title'       => $post['PostTitle'],
+            'description' => (string)$post['PostDescription'],
+            'alt'         => (string)$post['AltText'],
+            'categories'  => array_map(fn($c) => (int)$c['CategoryID'], $post['categories']),
+            'tags'        => $post['tags'],
+            'humanMade'   => $post['HumanMadeConfirmedAt'] !== null,
+            'challenge'   => $post['ChallengeID'] !== null,
+            'isDraft'     => (bool)$post['IsDraft'],
+            'remove'      => [],
+        ];
+    }
+
+    // Read the submitted form. Everything here is user input: nothing is trusted yet.
+    private function valuesFromForm(?array $post): array
+    {
+        $categoryIds = [];
+        foreach ((array)($_POST['categories'] ?? []) as $id) {
+            if (is_string($id) && ctype_digit($id)) {
+                $categoryIds[(int)$id] = (int)$id;
+            }
+        }
+
+        $tags = [];
+        foreach (explode(',', post_str('tags')) as $raw) {
+            $tag = mb_strtolower(ltrim(trim($raw), '#'));
+            $tag = mb_substr((string)preg_replace('/[^a-z0-9_\-æøå]/u', '', $tag), 0, 30);
+            if ($tag !== '') {
+                $tags[$tag] = $tag;
+            }
+        }
+
+        $remove = [];
+        foreach ((array)($_POST['remove'] ?? []) as $id) {
+            if (is_string($id) && ctype_digit($id)) {
+                $remove[(int)$id] = (int)$id;
+            }
+        }
+
+        return [
+            'title'       => post_str('title'),
+            'description' => post_str('description'),
+            'alt'         => post_str('alt'),
+            'categories'  => array_values($categoryIds),
+            'tags'        => array_slice(array_values($tags), 0, self::MAX_TAGS),
+            'humanMade'   => isset($_POST['human_made']),
+            'challenge'   => isset($_POST['challenge']),
+            // a post that is already published cannot be turned back into a draft (the button is hidden; this stops a hand-made request)
+            'isDraft'     => post_str('action') === 'draft' && ($post === null || (bool)$post['IsDraft']),
+            'remove'      => array_values($remove),
+        ];
+    }
+
+    // The text and the counting rules. Cheap checks first: no picture is opened until all of these are fine.
+    private function validate(array $v, ?array $post, PostModel $posts, ?array $challenge): array
+    {
+        $errors = [];
+        $publishing = !$v['isDraft'];
+
+        if (mb_strlen($v['title']) > 100) {
+            $errors['title'] = 'The title can be at most 100 characters.';
+        } elseif ($publishing && $v['title'] === '') {
+            $errors['title'] = 'Please give your post a title.';
+        }
+        if (mb_strlen($v['description']) > 5000) {
+            $errors['description'] = 'The story can be at most 5000 characters.';
+        }
+        if (mb_strlen($v['alt']) > 200) {
+            $errors['alt'] = 'The picture description can be at most 200 characters.';
+        } elseif ($publishing && $v['alt'] === '') {
+            $errors['alt'] = 'Please describe the picture for people who cannot see it.';
+        }
+
+        if (count($v['categories']) > self::MAX_CATEGORIES) {
+            $errors['categories'] = 'Pick at most ' . self::MAX_CATEGORIES . ' crafts.';
+        } elseif ($publishing && $v['categories'] === []) {
+            $errors['categories'] = 'Pick at least one craft.';
+        } elseif (count($posts->existingCategoryIds($v['categories'])) !== count($v['categories'])) {
+            $errors['categories'] = 'Please pick crafts from the list.';
+        }
+
+        if ($publishing && !$v['humanMade']) {
+            $errors['human_made'] = 'Please tick the box: only work you made yourself, by hand.';
+        }
+
+        // ---- the pictures: how many? (counted BEFORE any of them is opened) ----
+        $cover = $_FILES['photo'] ?? null;
+        $steps = ImageUploader::many($_FILES['steps'] ?? null);
+
+        if ($post === null && !ImageUploader::chosen($cover)) {
+            $errors['photo'] = 'Please add a photo of your piece.';
+        }
+        $keptSteps = 0;
+        if ($post !== null) {
+            foreach ($post['images'] as $image) {
+                if ((int)$image['Position'] > 1 && !in_array((int)$image['ImageID'], $v['remove'], true)) {
+                    $keptSteps++;
+                }
+            }
+        }
+        if ($keptSteps + count($steps) > self::MAX_STEP_PHOTOS) {
+            $errors['steps'] = 'A post can have at most ' . self::MAX_STEP_PHOTOS . ' step photos.';
+        }
+        return $errors;
+    }
+
+    // Open and store the pictures, then write the database. Returns errors (empty = saved, and then it redirects).
+    private function save(PostModel $posts, ?array $post, array $v, ?array $challenge): array
+    {
+        $uploader = new ImageUploader(ROOT_PATH . '/uploads');
+        $newFiles = [];                                // every picture file written during THIS request, to delete again if something fails
+        $errors   = [];
+
+        try {
+            // ---- 1. the pictures (this is where the real checks happen) ----
+            $cover = $_FILES['photo'] ?? null;
+            $coverName = null;
+            if (ImageUploader::chosen($cover)) {
+                try {
+                    $coverName = $uploader->store($cover);
+                } catch (UploadException $e) {
+                    throw new UploadException($e->getMessage(), 1);
+                }
+                $newFiles[] = $coverName;
+            }
+
+            $newSteps = [];
+            foreach (ImageUploader::many($_FILES['steps'] ?? null) as $i => $file) {
+                try {
+                    $stored = $uploader->store($file);
+                } catch (UploadException $e) {
+                    throw new UploadException('Step photo ' . ($i + 1) . ': ' . $e->getMessage(), 2);
+                }
+                $newFiles[] = $stored;
+                $newSteps[] = $stored;
+            }
+
+            // ---- 2. the final list of pictures, cover first ----
+            $oldFiles = [];                            // files that are no longer used after this save
+            $keptSteps = [];
+            $oldCover = null;
+            if ($post !== null) {
+                foreach ($post['images'] as $image) {
+                    if ((int)$image['Position'] === 1) {
+                        $oldCover = $image['FileName'];
+                    } elseif (in_array((int)$image['ImageID'], $v['remove'], true)) {
+                        $oldFiles[] = $image['FileName'];
+                    } else {
+                        $keptSteps[] = $image['FileName'];
+                    }
+                }
+            }
+            if ($coverName !== null && $oldCover !== null) {
+                $oldFiles[] = $oldCover;
+            }
+            $images = array_merge([$coverName ?? $oldCover], $keptSteps, $newSteps);
+
+            // ---- 3. the database ----
+            $data = [
+                'title'       => $v['title'] !== '' ? $v['title'] : 'Untitled draft',
+                'description' => $v['description'] !== '' ? $v['description'] : null,
+                'alt'         => $v['alt'] !== '' ? $v['alt'] : null,
+                'isDraft'     => $v['isDraft'],
+                'humanMade'   => $v['humanMade'],
+                // a running challenge is joined with the tick box; if none runs any more, an old link stays as it was
+                'challengeId' => $challenge !== null
+                    ? ($v['challenge'] ? (int)$challenge['ChallengeID'] : null)
+                    : ($post['ChallengeID'] ?? null),
+            ];
+
+            if ($post === null) {
+                $postId = $posts->create((int)$this->user['UserID'], $data, $v['categories'], $v['tags'], $images);
+            } else {
+                $postId = (int)$post['PostID'];
+                $posts->update($postId, $data, $v['categories'], $v['tags'], $images);
+                $uploader->deleteMany($oldFiles);      // only now: the database no longer points at them
+            }
+        } catch (UploadException $e) {
+            $uploader->deleteMany($newFiles);
+            return [($e->getCode() === 2 ? 'steps' : 'photo') => $e->getMessage()];
+        } catch (Throwable $e) {
+            $uploader->deleteMany($newFiles);
+            error_log('Saving a post failed: ' . $e->getMessage());
+            return ['form' => 'Something went wrong while saving. Nothing was posted. Please try again.'];
+        }
+
+        flash_set('success', $v['isDraft'] ? 'Draft saved. Only you can see it.' : 'Your post is live.');
+        redirect_to(url('post', ['id' => $postId]));
+        return $errors;                                // never reached: redirect_to() ends the script
+    }
+
+    // =================================================================
+    //   Delete (Flow: "Delete post")
+    //   owner or admin?  no  -> 403
+    //   delete the database row first (pictures, likes and comments follow by CASCADE), THEN the picture files.
+    //   That order means a failed step never leaves a post pointing at a missing picture.
+    // =================================================================
+    // This page keeps the "Are you sure?" step available without JavaScript.
+    public function confirmDelete(): void
+    {
+        $post = $this->findFromQuery();
+        if ($post === null || ($post['IsDraft'] && !$this->isOwner($post))) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->isOwner($post) && !$this->isAdmin()) {
+            http_response_code(403);
+            $this->render('pages/forbidden', ['title' => 'No access']);
+            return;
+        }
+        $this->render('post/delete', ['title' => 'Delete post', 'post' => $post]);
+    }
+
+    public function delete(): void
+    {
+        if (!is_post()) {
+            redirect_to(url('home'));
+        }
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to(url('home'));
+        }
+
+        $posts = new PostModel($this->db);
+        $id    = ctype_digit(post_str('id')) ? (int)post_str('id') : 0;
+        $post  = $id > 0 ? $posts->find($id) : null;
+
+        if ($post === null) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->isOwner($post) && !$this->isAdmin()) {
+            http_response_code(403);
+            $this->render('pages/forbidden', ['title' => 'No access']);
+            return;
+        }
+
+        $files = $posts->delete($id);
+        (new ImageUploader(ROOT_PATH . '/uploads'))->deleteMany($files);
+
+        flash_set('success', 'The post was deleted.');
+        redirect_to(url($this->isOwner($post) ? 'members' : 'home'));
+    }
+
+    // ---------------------------------------------------------------------
+    // small helpers
+    // ---------------------------------------------------------------------
+
+    // ?id=7 -> the post, or null. The id is user input: only digits are accepted.
+    private function findFromQuery(): ?array
+    {
+        $raw = $_GET['id'] ?? '';
+        if (!is_string($raw) || !ctype_digit($raw) || $raw === '0') {
+            return null;
+        }
+        return (new PostModel($this->db))->find((int)$raw);
+    }
+
+    private function isOwner(array $post): bool
+    {
+        return $this->user !== null && (int)$post['UserID'] === (int)$this->user['UserID'];
+    }
+
+    private function isAdmin(): bool
+    {
+        return $this->user !== null && $this->user['RoleName'] === 'admin';
+    }
+}

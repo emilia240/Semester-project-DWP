@@ -48,7 +48,7 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
                     <a href="<?= e(url('edit', ['id' => $post['PostID']])) ?>" class="btn rounded-full"><?= icon('pencil', 16) ?> Edit</a>
                 <?php endif; ?>
                 <?php if ($canDelete): ?>
-                    <button type="button" class="btn btn-ghost rounded-full text-error" data-confirm="Delete “<?= e($post['PostTitle']) ?>”?" data-confirm-text="The photos will be removed for good." data-confirm-form="delete-form"><?= icon('trash', 16) ?> Delete</button>
+                    <a href="<?= e(url('confirm-delete-post', ['id' => $post['PostID']])) ?>" class="btn btn-ghost rounded-full text-error" data-confirm="Delete “<?= e($post['PostTitle']) ?>”?" data-confirm-text="The photos will be removed for good." data-confirm-form="delete-form"><?= icon('trash', 16) ?> Delete</a>
                 <?php endif; ?>
             </div>
 
@@ -69,7 +69,7 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
     </div>
 
     <?php if ($canDelete): ?>
-        <?php // The Delete button opens a confirmation window that submits this form. ?>
+        <?php // JavaScript uses this form after confirmation; without it the link opens a confirmation page. ?>
         <form method="post" action="<?= e(url('delete-post')) ?>" id="delete-form" class="hidden">
             <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= (int)$post['PostID'] ?>">

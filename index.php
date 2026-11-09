@@ -34,6 +34,11 @@ $routes = [
     'password'    => ['AccountController', 'password', 'member'],
     'join-crafts'     => ['OnboardingController', 'crafts', 'onboarding'],        // join step 2
     'join-guidelines' => ['OnboardingController', 'guidelines', 'onboarding'],    // join step 3
+    'post'        => ['PostController', 'show', 'all'],
+    'create'      => ['PostController', 'create', 'member'],
+    'edit'        => ['PostController', 'edit', 'member'],
+    'confirm-delete-post' => ['PostController', 'confirmDelete', 'member'],
+    'delete-post' => ['PostController', 'delete', 'member'],            // POST only
     'admin'       => ['AdminController', 'index', 'admin'],
 ];
 
