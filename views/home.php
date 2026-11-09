@@ -4,7 +4,7 @@ The front page. One address, three versions:
   visitor ($user is null)      big "To be Human" + intro + join buttons
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
-The feed, "Coolest this week" and the maker of the week come when posts exist in the database.
+Under the top part: the newest posts. "Coolest this week" and the maker of the week come later.
 */
 ?>
 <?php if ($user === null): ?>
@@ -49,8 +49,28 @@ The feed, "Coolest this week" and the maker of the week come when posts exist in
         <?php else: ?>
             <p class="font-hand text-5xl leading-none text-accent sm:text-6xl">Good to see you</p>
             <h1 class="mt-3 text-6xl font-semibold leading-[0.95] sm:text-7xl lg:text-8xl">Hello, <?= e($user['FirstName']) ?>!</h1>
-            <p class="mt-5 text-2xl opacity-80">Your feed is on its way. For now you can look at your account.</p>
-            <div class="mt-8"><a href="<?= e(url('members')) ?>" class="btn btn-primary btn-lg rounded-full">My account <?= icon('arrow', 20) ?></a></div>
+            <p class="mt-5 text-2xl opacity-80">Here is what the community made lately. Got something to show?</p>
+            <div class="mt-8 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary btn-lg rounded-full">Make a post <?= icon('arrow', 20) ?></a><a href="<?= e(url('members')) ?>" class="btn btn-ghost btn-lg rounded-full">My account</a></div>
         <?php endif; ?>
     </section>
 <?php endif; ?>
+
+<?php /* the newest posts: a few for visitors (with a Join prompt), more for members */ ?>
+<section class="mx-auto max-w-[120rem] px-4 pb-16 sm:px-16 md:px-24 lg:px-40" aria-labelledby="fresh-h">
+    <h2 id="fresh-h" class="font-display text-3xl font-semibold"><?= $user === null ? 'Fresh from the community' : 'Newest posts' ?></h2>
+    <?php if ($posts): ?>
+        <div class="mt-6 columns-1 gap-8 sm:columns-2 lg:columns-3">
+            <?php foreach ($posts as $p) { partial('post_card', ['p' => $p]); } ?>
+        </div>
+        <?php if ($user === null): ?>
+            <div class="tbh-card mt-4 p-6 text-center">
+                <p class="font-bold">There is more to see inside.</p>
+                <p class="mt-1 opacity-80">Join to share your own work and follow the makers you like.</p>
+                <a href="<?= e(url('join')) ?>" class="btn btn-primary mt-4 rounded-full">Join us</a>
+            </div>
+        <?php endif; ?>
+    <?php else: ?>
+        <p class="mt-4 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
+        <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
+    <?php endif; ?>
+</section>

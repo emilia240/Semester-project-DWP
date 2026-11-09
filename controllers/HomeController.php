@@ -2,12 +2,13 @@
 /*
 HomeController  =  the front page.
 Everybody may open it (see the route table in index.php). Visitors, members and admins see a different top part;
-the view decides which, using $user.
+the view decides which, using $user. Below it: the newest published posts (drafts never show up here).
 */
 class HomeController extends BaseController
 {
     public function index(): void
     {
-        $this->render('home', ['title' => SITE_NAME]);
+        $posts = (new PostModel($this->db))->latest($this->user === null ? 6 : 24);
+        $this->render('home', ['title' => SITE_NAME, 'posts' => $posts]);
     }
 }

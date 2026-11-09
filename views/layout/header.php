@@ -16,6 +16,7 @@ More links (Explore, Create post, notifications, search) are added here when tho
                 <a href="<?= e(url('login')) ?>" class="btn btn-ghost">Log in</a>
                 <a href="<?= e(url('join')) ?>" class="btn btn-primary rounded-full">Join us</a>
             <?php else: ?>
+                <a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full"><?= icon('plus', 18) ?> <span class="hidden sm:inline">New post</span><span class="sm:hidden">Post</span></a>
                 <div class="dropdown dropdown-end">
                     <button type="button" tabindex="0" class="btn btn-ghost btn-circle" aria-label="Your menu"><?= avatar($user, 40) ?></button>
                     <ul tabindex="0" class="menu dropdown-content z-50 mt-3 w-64 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">

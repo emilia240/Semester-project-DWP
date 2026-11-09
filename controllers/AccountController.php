@@ -9,7 +9,9 @@ class AccountController extends BaseController
 {
     public function index(): void
     {
-        $this->render('account/index', ['title' => 'My account']);
+        // My own posts, drafts included (only I see the drafts: includeDrafts is true only here).
+        $posts = (new PostModel($this->db))->forUser((int)$this->user['UserID'], true);
+        $this->render('account/index', ['title' => 'My account', 'posts' => $posts]);
     }
 
     // =================================================================
