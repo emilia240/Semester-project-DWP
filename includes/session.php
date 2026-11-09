@@ -17,7 +17,8 @@ header('X-Frame-Options: DENY');                    // nobody may put our site i
 header('Referrer-Policy: same-origin');             // do not tell other sites which page you came from
 // Content-Security-Policy: allow our own resources and no inline scripts.
 // Turnstile needs an exception for Cloudflare's script and its captcha frame.
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");
+// img-src blob: lets the create-post form show a preview of the picture the visitor just chose (it never leaves their browser).
+header("Content-Security-Policy: default-src 'self'; img-src 'self' blob:; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");
 
 // ---------------------------------------------------------------------
 // 2) Session cookie settings (must be done BEFORE session_start)

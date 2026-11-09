@@ -104,3 +104,73 @@ function avatar(array $user, int $size = 40): string
     return '<span class="inline-flex shrink-0 items-center justify-center rounded-full font-display font-semibold '
         . $color . ' ' . ($sizes[$size] ?? $sizes[40]) . '" aria-hidden="true">' . e($letters) . '</span>';
 }
+
+
+// ---------------------------------------------------------------------
+// Posts
+// ---------------------------------------------------------------------
+
+/*
+when() = "just now", "3 hours ago", "yesterday", "12 Mar" for a date from the database.
+*/
+function when(string $dateTime): string
+{
+    $ts = strtotime($dateTime);
+    $now = time();
+    $diff = $now - $ts;
+    if ($diff < 60) {
+        return 'just now';
+    }
+    if (date('Y-m-d', $ts) === date('Y-m-d', $now)) {
+        if ($diff < 3600) {
+            $m = intdiv($diff, 60);
+            return $m . ' minute' . ($m === 1 ? '' : 's') . ' ago';
+        }
+        $h = intdiv($diff, 3600);
+        return $h . ' hour' . ($h === 1 ? '' : 's') . ' ago';
+    }
+    $days = (int)floor((strtotime(date('Y-m-d', $now)) - strtotime(date('Y-m-d', $ts))) / 86400);
+    if ($days === 1) {
+        return 'yesterday';
+    }
+    if ($days < 7) {
+        return $days . ' days ago';
+    }
+    return date('Y', $ts) === date('Y', $now) ? date('j M', $ts) : date('j M Y', $ts);
+}
+
+/*
+format_text() = the text of a post, made safe and a little nicer.
+Step 1 is ALWAYS e(): every < and > from the visitor becomes harmless text, so nobody can post a script.
+Only after that do we turn **bold**, *italic*, links and #tags into HTML, using only tags we write ourselves.
+Links only match http:// and https:// (never javascript:), open in a new tab, and show the "do you trust this link?" warning first.
+*/
+function format_text(string $text): string
+{
+    $safe = e($text);
+    $safe = preg_replace('~\*\*(.+?)\*\*~s', '<strong>$1</strong>', $safe);
+    $safe = preg_replace('~(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])~s', '<em>$1</em>', $safe);
+    // Keep links and our formatting tags separate so a #tag cannot insert HTML into an href.
+    $parts = preg_split('~(<[^>]+>|https?://[^\s<]+)~i', $safe, -1, PREG_SPLIT_DELIM_CAPTURE);
+    foreach ($parts as $index => $part) {
+        if ($index % 2 === 1) {
+            if ($part[0] !== '<') {
+                $parts[$index] = '<a href="' . $part . '" data-ext rel="nofollow noopener noreferrer" target="_blank" class="link link-primary">' . $part . '</a>';
+            }
+            continue;
+        }
+        $parts[$index] = preg_replace('~(?<![\w&/=])#([\p{L}\p{N}_]+)~u', '<span class="font-bold text-primary">#$1</span>', $part);
+    }
+    return nl2br(implode('', $parts));
+}
+
+/*
+image_attrs() = width="600" height="400" for a stored picture, so the page does not jump around while pictures load.
+(The Content-Security-Policy does not allow style="aspect-ratio: ..." in the HTML, but width and height attributes are fine.)
+*/
+function image_attrs(string $fileName, bool $thumb = false): string
+{
+    $path = ROOT_PATH . '/' . ImageUploader::url($fileName, $thumb);
+    $size = is_file($path) ? @getimagesize($path) : false;
+    return $size ? 'width="' . (int)$size[0] . '" height="' . (int)$size[1] . '"' : '';
+}
