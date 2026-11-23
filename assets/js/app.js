@@ -169,6 +169,60 @@ so every check that matters is repeated in PHP.
     }
 
 
+    /* ---------- the heart for members: send the form without reloading ----------
+       The normal form still works without JavaScript. While waiting, prevent a double click. */
+    document.addEventListener('submit', function (e) {
+        var form = e.target.closest('[data-like-form]');
+        if (!form || !window.fetch) { return; }
+        e.preventDefault();
+        var button = form.querySelector('button');
+        if (button.disabled) { return; }
+        button.disabled = true;
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        }).then(function (r) {
+            var type = r.headers.get('Content-Type') || '';
+            if (type.indexOf('application/json') === -1) { throw new Error('not json'); }
+            return r.json().then(function (data) { return { ok: r.ok, status: r.status, data: data }; });
+        }).then(function (res) {
+            // These errors happen before the like is changed, so the member can try again.
+            if (!res.ok && (res.status === 403 || res.status === 404)) {
+                toast(res.data.error || 'Could not like this post. Please try again.');
+                button.disabled = false;
+                return;
+            }
+            // A broken answer cannot tell us whether the server saved the change.
+            if (!res.ok || !res.data || res.data.ok !== true || typeof res.data.liked !== 'boolean'
+                || (res.data.count !== null && (!Number.isInteger(res.data.count) || res.data.count < 0))) {
+                throw new Error('unexpected like answer');
+            }
+            button.setAttribute('aria-pressed', res.data.liked ? 'true' : 'false');
+            var number = button.querySelector('[data-like-count]');
+            if (number && res.data.count !== null) { number.textContent = res.data.count; }
+            button.disabled = false;
+        }).catch(function () {
+            // Never resend: the first request may have succeeded even if its answer was lost.
+            var message = document.createElement('span');
+            message.setAttribute('role', 'alert');
+            form.appendChild(message);
+            message.textContent = 'Could not confirm the like. Refresh to check, and log in again if needed.';
+        });
+    });
+
+    /* ---------- the heart for visitors: open the join window instead of going straight to login ---------- */
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-like-guest]');
+        var dialog = $('#modal-join');
+        if (!link || !dialog || !dialog.showModal) { return; }  // without a dialog the link still works
+        e.preventDefault();
+        var login = $('#join-login');
+        if (login) { login.href = link.href; }                  // keep the post to return to after login
+        dialog.showModal();
+    });
+
     /* ---------- copy link (data-copy="relative url") ---------- */
     document.addEventListener('click', function (e) {
         var b = e.target.closest('[data-copy]');
