@@ -20,15 +20,23 @@ class PostModel
     // ---------------------------------------------------------------------
 
     // One post with its author, pictures (cover first), categories and tags. null = there is no such post.
-    public function find(int $postId): ?array
+    // $viewerId = the logged-in member (0 = a visitor). It is only used to answer "did I like this post?".
+    // The three like columns are SUBQUERIES: small SELECTs inside the SELECT.
+    //   LikeCount = how many likes, LikedByMe = did the viewer like it (EXISTS gives 1 or 0), AuthorShowLikes = may the number be shown.
+    public function find(int $postId, int $viewerId = 0): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT p.*, u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName
+            'SELECT p.*, u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName,
+                    u.ShowLikes AS AuthorShowLikes,
+                    (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID) AS LikeCount,
+                    EXISTS (SELECT 1 FROM `PostLike` m WHERE m.PostID = p.PostID AND m.UserID = :me) AS LikedByMe
                FROM `Post` p
                JOIN `User` u ON u.UserID = p.UserID
               WHERE p.PostID = :id'
         );
-        $stmt->execute([':id' => $postId]);
+        $stmt->bindValue(':me', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $postId, PDO::PARAM_INT);
+        $stmt->execute();
         $post = $stmt->fetch();
         if (!$post) {
             return null;
@@ -56,9 +64,9 @@ class PostModel
     }
 
     // The newest PUBLISHED posts (drafts are never in this list), one row per post with its cover picture.
-    public function latest(int $limit, int $offset = 0): array
+    public function latest(int $limit, int $offset = 0, int $viewerId = 0): array
     {
-        return $this->cards('WHERE p.IsDraft = 0', [], $limit, $offset);
+        return $this->cards('WHERE p.IsDraft = 0', [], $limit, $offset, $viewerId);
     }
 
     // Count this member's new posts, including drafts, for the posting limit.
@@ -76,18 +84,23 @@ class PostModel
     }
 
     // The posts of one member, newest first. Drafts are only included when the member looks at their OWN list.
-    public function forUser(int $userId, bool $includeDrafts): array
+    public function forUser(int $userId, bool $includeDrafts, int $viewerId = 0): array
     {
         $where = 'WHERE p.UserID = :u' . ($includeDrafts ? '' : ' AND p.IsDraft = 0');
-        return $this->cards($where, [':u' => $userId], 100, 0);
+        return $this->cards($where, [':u' => $userId], 100, 0, $viewerId);
     }
 
     // The shared query behind the lists: post + author + cover picture + category names.
-    private function cards(string $where, array $params, int $limit, int $offset): array
+    // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting
+    // ATTR_EMULATE_PREPARES = false does not allow the same :name twice in one query.
+    private function cards(string $where, array $params, int $limit, int $offset, int $viewerId = 0): array
     {
         $stmt = $this->db->prepare(
             "SELECT p.PostID, p.UserID, p.PostTitle, p.PostDescription, p.AltText, p.UploadedAt, p.IsDraft,
                     u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName,
+                    u.ShowLikes AS AuthorShowLikes,
+                    (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID) AS LikeCount,
+                    EXISTS (SELECT 1 FROM `PostLike` m WHERE m.PostID = p.PostID AND m.UserID = :me) AS LikedByMe,
                     i.FileName AS CoverFile,
                     (SELECT GROUP_CONCAT(c.CategoryName ORDER BY c.CategoryName SEPARATOR '|')
                        FROM `PostCategory` pc JOIN `Category` c ON c.CategoryID = pc.CategoryID
@@ -102,6 +115,7 @@ class PostModel
         foreach ($params as $name => $value) {
             $stmt->bindValue($name, $value);
         }
+        $stmt->bindValue(':me', $viewerId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();

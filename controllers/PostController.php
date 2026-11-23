@@ -374,7 +374,7 @@ class PostController extends BaseController
         if (!is_string($raw) || !ctype_digit($raw) || $raw === '0') {
             return null;
         }
-        return (new PostModel($this->db))->find((int)$raw);
+        return (new PostModel($this->db))->find((int)$raw, $this->viewerId());
     }
 
     // Return a message when this member has made too many new posts, otherwise null.

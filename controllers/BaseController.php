@@ -31,6 +31,12 @@ abstract class BaseController
         render($view, $vars + ['user' => $this->user, 'page' => $this->page]);
     }
 
+    // The id of the logged-in member, or 0 for a visitor. The like count queries use it to answer "did I like this?".
+    protected function viewerId(): int
+    {
+        return $this->user === null ? 0 : (int)$this->user['UserID'];
+    }
+
     // Show a 404 page (page not found) and stop.
     protected function notFound(): void
     {

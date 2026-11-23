@@ -8,7 +8,7 @@ class HomeController extends BaseController
 {
     public function index(): void
     {
-        $posts = (new PostModel($this->db))->latest($this->user === null ? 6 : 24);
+        $posts = (new PostModel($this->db))->latest($this->user === null ? 6 : 24, 0, $this->viewerId());
         $this->render('home', ['title' => SITE_NAME, 'posts' => $posts]);
     }
 }
