@@ -26,7 +26,7 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
 
     <?php // Use the small image so a feed with many posts loads faster. ?>
     <a href="<?= $link ?>" class="block bg-base-300" aria-label="Open <?= e($p['PostTitle']) ?>">
-        <img src="<?= e(ImageUploader::url($p['CoverFile'], true)) ?>" <?= image_attrs($p['CoverFile'], true) ?> alt="<?= e($p['AltText'] ?? $p['PostTitle']) ?>" loading="lazy" class="mx-auto h-auto max-h-[56rem] w-full object-contain">
+        <img src="<?= e(ImageUploader::url($p['CoverFile'], true)) ?>" <?= image_attrs($p['CoverFile'], true) ?> alt="<?= e($p['AltText'] ?? $p['PostTitle']) ?>" loading="lazy" class="mx-auto h-auto max-h-[30rem] w-full object-contain">
     </a>
 
     <h3 class="mt-3 font-display text-xl font-semibold leading-snug"><a href="<?= $link ?>" class="hover:underline"><?= e($p['PostTitle']) ?></a></h3>
