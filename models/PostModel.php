@@ -61,6 +61,20 @@ class PostModel
         return $this->cards('WHERE p.IsDraft = 0', [], $limit, $offset);
     }
 
+    // Count this member's new posts, including drafts, for the posting limit.
+    // CreatedAt never changes when a draft is published. NOW() uses the same database clock.
+    // idx_post_user_created helps the database find this member's recent posts.
+    public function countCreatedSince(int $userId, int $seconds): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM `Post` WHERE `UserID` = :u AND `CreatedAt` > (NOW() - INTERVAL :s SECOND)'
+        );
+        $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':s', $seconds, PDO::PARAM_INT);
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
     // The posts of one member, newest first. Drafts are only included when the member looks at their OWN list.
     public function forUser(int $userId, bool $includeDrafts): array
     {

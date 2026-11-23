@@ -126,11 +126,17 @@ User joins Challenge (M:N)
 | ChallengeID | INT UNSIGNED | *FK -> Challenge*, NULL |  |
 | PostTitle | VARCHAR(100) |  |  |
 | PostDescription | TEXT | NULL |  |
+| CreatedAt | DATETIME |  | CURRENT_TIMESTAMP |
 | UploadedAt | DATETIME |  | CURRENT_TIMESTAMP |
 | AltText | VARCHAR(200) | NULL |  |
 | HumanMadeConfirmedAt | DATETIME | NULL (empty only while IsDraft = 1; CHECK ck_post_published_confirmed) |  |
 | IsDraft | TINYINT(1) |  | 1 |
 | AiCheckStatus | VARCHAR(15) |  | 'pending' |
+
+`CreatedAt` records when the post or draft was first created and does not change.
+`UploadedAt` changes when a draft is published, so the feed shows it as new.
+For older posts, the migration uses `UploadedAt` as an estimate for `CreatedAt`
+because the original creation date was not stored.
 
 ### PostImage
 
@@ -381,9 +387,10 @@ All of it is written in `sql/01_schema.sql` (tables, indexes) and `sql/03_views_
 4. `trg_report_resolved`: before a report is updated, when `Status` changes from `open` to something else and `ResolvedAt` is empty, set it to now.
 Never a notification for likes. Soren's triggers lecture is still to come: check these against it.
 
-**Indexes (need 2+, we have 6 of our own).** Primary keys, UNIQUE keys and foreign keys are indexed by InnoDB anyway. Ours:
+**Indexes (need 2+, we have 7 of our own).** Primary keys, UNIQUE keys and foreign keys are indexed by InnoDB anyway. Ours:
 - `Post(UploadedAt)`: newest posts first (Explore, home feed).
 - `Post(UserID, UploadedAt)`: the posts of one profile.
+- `Post(UserID, CreatedAt)`: count one member's recent posts for the posting limit.
 - `Comment(PostID, CreatedAt)`: the comments under one post.
 - `PostLike(PostID, LikedAt)`: likes in a time window, used by `hot_posts` and `sticky_posts`.
 - `Notification(RecipientID, ReadAt)`: the bell (unread notifications of one user).

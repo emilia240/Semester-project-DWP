@@ -19,6 +19,12 @@ class PostController extends BaseController
     public const MAX_STEP_PHOTOS = 6;     // plus the cover = 7 pictures per post
     public const MAX_TAGS = 8;
 
+    // A valid CSRF token cannot stop a member from replaying their own request.
+    // Count new posts instead. Drafts count too; editing is not limited.
+    public const NEW_POSTS_SHORT         = 5;         // at most 5 new posts ...
+    public const NEW_POSTS_SHORT_SECONDS = 600;       // ... in 10 minutes
+    public const NEW_POSTS_DAY           = 20;        // and at most 20 in 24 hours
+
     // =================================================================
     //   One post
     // =================================================================
@@ -80,10 +86,18 @@ class PostController extends BaseController
                 $errors['form'] = 'The form expired. Please try again.';
 
             } else {
-                $old    = $this->valuesFromForm($post);
-                $errors = $this->validate($old, $post, $posts, $challenge);
-                if (!$errors) {
-                    $errors = $this->save($posts, $post, $old, $challenge);
+                $old = $this->valuesFromForm($post);
+                // Check the limit only after CSRF, and only for a new post.
+                $limitMessage = $post === null ? $this->postingLimitMessage($posts) : null;
+                if ($limitMessage !== null) {
+                    // 429 means too many requests. The text stays; photos must be chosen again.
+                    http_response_code(429);
+                    $errors['form'] = $limitMessage;
+                } else {
+                    $errors = $this->validate($old, $post, $posts, $challenge);
+                    if (!$errors) {
+                        $errors = $this->save($posts, $post, $old, $challenge);
+                    }
                 }
             }
         }
@@ -361,6 +375,20 @@ class PostController extends BaseController
             return null;
         }
         return (new PostModel($this->db))->find((int)$raw);
+    }
+
+    // Return a message when this member has made too many new posts, otherwise null.
+    private function postingLimitMessage(PostModel $posts): ?string
+    {
+        $userId = (int)$this->user['UserID'];
+
+        if ($posts->countCreatedSince($userId, self::NEW_POSTS_SHORT_SECONDS) >= self::NEW_POSTS_SHORT) {
+            return 'You are posting very fast. Please wait a few minutes and try again.';
+        }
+        if ($posts->countCreatedSince($userId, 86400) >= self::NEW_POSTS_DAY) {
+            return 'You have reached the limit of ' . self::NEW_POSTS_DAY . ' new posts in 24 hours. Please come back tomorrow.';
+        }
+        return null;
     }
 
     private function isOwner(array $post): bool

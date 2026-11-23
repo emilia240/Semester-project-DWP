@@ -257,6 +257,9 @@ CREATE TABLE `Post` (
     `ChallengeID`          INT UNSIGNED NULL,
     `PostTitle`            VARCHAR(100) NOT NULL,
     `PostDescription`      TEXT         NULL,
+    -- stays unchanged when a draft is published; used to count newly created posts
+    `CreatedAt`            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- a draft gets a new upload date when it is published, so it appears at the top
     `UploadedAt`           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- text for screen readers
     `AltText`              VARCHAR(200) NULL,
@@ -271,6 +274,8 @@ CREATE TABLE `Post` (
     KEY idx_post_uploaded (`UploadedAt`),
     -- the posts of one profile, newest first (also serves the FK on UserID)
     KEY idx_post_user_uploaded (`UserID`, `UploadedAt`),
+    -- count one member's recently created posts for the posting limit
+    KEY idx_post_user_created (`UserID`, `CreatedAt`),
     CONSTRAINT fk_post_user FOREIGN KEY (`UserID`) REFERENCES `User` (`UserID`) ON DELETE CASCADE,
     CONSTRAINT fk_post_challenge FOREIGN KEY (`ChallengeID`) REFERENCES `Challenge` (`ChallengeID`) ON DELETE SET NULL,
     -- a published post must carry the human-made tick (a draft may still be missing it)
