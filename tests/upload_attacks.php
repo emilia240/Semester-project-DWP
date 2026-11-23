@@ -83,6 +83,41 @@ function makeJpeg(string $path, int $w, int $h, int $quality = 85, bool $noise =
     imagejpeg($im, $path, $quality);
 }
 
+// Make a picture with different coloured bands at its four edges.
+// Losing an entire band during resizing means part of the picture was cut off.
+function makeFramed(string $path, int $w, int $h): void
+{
+    $im   = imagecreatetruecolor($w, $h);
+    $band = max(6, (int)round(min($w, $h) * 0.02));
+    imagefilledrectangle($im, 0, 0, $w - 1, $h - 1, imagecolorallocate($im, 255, 255, 255));
+    imagefilledrectangle($im, 0, 0, $w - 1, $band, imagecolorallocate($im, 255, 0, 0));
+    imagefilledrectangle($im, 0, $h - 1 - $band, $w - 1, $h - 1, imagecolorallocate($im, 0, 160, 0));
+    imagefilledrectangle($im, 0, 0, $band, $h - 1, imagecolorallocate($im, 0, 0, 255));
+    imagefilledrectangle($im, $w - 1 - $band, 0, $w - 1, $h - 1, imagecolorallocate($im, 255, 255, 0));
+    imagejpeg($im, $path, 95);
+}
+
+// Check the middle of each edge for its colour. A small crop can leave a band
+// visible, so this catches missing bands rather than proving no pixels were cut.
+function framedEdgesIntact(string $file): bool
+{
+    $im = imagecreatefromjpeg($file);
+    $w = imagesx($im);
+    $h = imagesy($im);
+    $at = function (int $x, int $y) use ($im): array {
+        $c = imagecolorat($im, $x, $y);
+        return [($c >> 16) & 255, ($c >> 8) & 255, $c & 255];
+    };
+    [$tr, $tg, $tb] = $at(intdiv($w, 2), 1);              // top: red
+    [$br, $bg, $bb] = $at(intdiv($w, 2), $h - 2);         // bottom: green
+    [$lr, $lg, $lb] = $at(1, intdiv($h, 2));              // left: blue
+    [$rr, $rg, $rb] = $at($w - 2, intdiv($h, 2));         // right: yellow
+    return $tr > 180 && $tg < 90 && $tb < 90
+        && $bg > 110 && $br < 90 && $bb < 90
+        && $lb > 180 && $lr < 90 && $lg < 90
+        && $rr > 180 && $rg > 180 && $rb < 90;
+}
+
 // A REAL png of one colour, written as a stream so this script itself does not need gigabytes: a few KB on disk, millions of pixels.
 function makeHugeSolidPng(string $path, int $w, int $h): void
 {
@@ -197,7 +232,7 @@ expectAccepted('200 x 200 (exactly the minimum) is fine', fileEntry("$inbox/edge
 makeJpeg("$inbox/edge3.jpg", 600, 1201);
 expectRefused('600 x 1201 (a hair over 2 times)', fileEntry("$inbox/edge3.jpg"), 'thin shape');
 
-// Normal shapes must NOT be refused, and must NOT be cut: only scaled, the shape stays the same.
+// Normal shapes must be accepted. Check their proportions and their coloured edges.
 foreach ([
     'a normal landscape photo 4000 x 3000'    => [4000, 3000],
     'a portrait photo 3000 x 4000'            => [3000, 4000],
@@ -212,7 +247,15 @@ foreach ([
     if ($name !== null) {
         [$w, $h] = getimagesize("$store/$name");
         $same = abs(($w / $h) - ($w0 / $h0)) < 0.02;
-        result('...and it was only scaled, not cut (same shape)', $same, "{$w0}x{$h0} became {$w}x{$h}");
+        result('...and it kept the same shape', $same, "{$w0}x{$h0} became {$w}x{$h}");
+    }
+    // The same shape alone cannot rule out cropping. Check the coloured bands
+    // in both saved sizes, while noting that a small crop could leave them intact.
+    makeFramed("$inbox/framed.jpg", $w0, $h0);
+    $name = expectAccepted('...a picture with coloured edges', fileEntry("$inbox/framed.jpg"));
+    if ($name !== null) {
+        result('...all edge bands remain (big picture)', framedEdgesIntact("$store/$name"));
+        result('...all edge bands remain (small picture)', framedEdgesIntact("$store/" . ImageUploader::thumbName($name)));
     }
 }
 

@@ -191,7 +191,12 @@ class ImageUploader
     {
         if (function_exists('finfo_open')) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = $finfo ? finfo_file($finfo, $path) : false;
+            // Some systems warn when they cannot inspect a file. Hide that warning
+            // from visitors, but log the failure so a server problem is not silent.
+            $mime = $finfo ? @finfo_file($finfo, $path) : false;
+            if ($mime === false) {
+                error_log('Image upload: could not determine the file type.');
+            }
             return is_string($mime) ? $mime : '';
         }
         $info = @getimagesize($path);
