@@ -2,8 +2,10 @@
 /*
 One post in a list (front page, My account). Needs: $p = one row from PostModel::latest() / forUser().
 Optional: $showStatus (true = show a Draft / Published label, only on the member's own list).
+Optional: $back = which page the heart sends a member back to when JavaScript is off: 'home' or 'members' (default: the post page).
 */
 $showStatus = $showStatus ?? false;
+$back = $back ?? 'post';
 $cats = $p['Categories'] !== null ? explode('|', $p['Categories']) : [];
 $link = e(url('post', ['id' => $p['PostID']]));
 $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'LastName' => $p['AuthorLastName']];
@@ -30,4 +32,11 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
     </a>
 
     <h3 class="mt-3 font-display text-xl font-semibold leading-snug"><a href="<?= $link ?>" class="hover:underline"><?= e($p['PostTitle']) ?></a></h3>
+
+    <?php // A draft has no heart (it is not public), so no footer either. ?>
+    <?php if (!$p['IsDraft']): ?>
+        <footer class="mt-1 flex items-center gap-1 text-base-content/80">
+            <?php partial('like_button', ['p' => $p, 'back' => $back]); ?>
+        </footer>
+    <?php endif; ?>
 </article>

@@ -2,7 +2,7 @@
 /*
 One post: the pictures on the left, everything about it on the right.
 Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin).
-Likes, comments, saving and reporting come in a later step: this page only shows what already works.
+Likes work (the heart). Comments, saving and reporting come in a later step.
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
@@ -63,6 +63,7 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
             <p class="mt-4 text-sm opacity-80"><?= e(when($post['UploadedAt'])) ?></p>
 
             <div class="mt-6 flex items-center gap-1 border-y border-base-300 py-3">
+                <?php partial('like_button', ['p' => $post, 'back' => 'post']); ?>
                 <button type="button" class="btn btn-ghost btn-sm gap-1" data-copy="<?= e(url('post', ['id' => $post['PostID']])) ?>"><?= icon('link', 18) ?> Copy link</button>
             </div>
         </div>

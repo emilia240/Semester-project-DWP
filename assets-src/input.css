@@ -117,6 +117,9 @@
 /* a few small custom pieces daisyUI does not have */
 @layer components {
   .tbh-card { background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: var(--radius-box); }
+  /* the heart: filled in the main colour when the member liked the post (the same attribute is read by screen readers) */
+  .tbh-like[aria-pressed="true"] svg { fill: currentColor; color: var(--color-primary); }
+  .tbh-like[aria-pressed="true"] { color: var(--color-primary); }
   /* the big "TO be HUMAN" wordmark: it always fills the full width of its box (cqw = % of the box width) */
   .tbh-wordmark-box { container-type: inline-size; }
   .tbh-wordmark { font-family: var(--font-wordmark); font-size: 13.55cqw; line-height: 1; white-space: nowrap; letter-spacing: -0.01em; text-transform: uppercase; margin: 0; color: var(--color-base-content); }

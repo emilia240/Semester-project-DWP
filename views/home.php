@@ -60,7 +60,7 @@ Under the top part: the newest posts. "Coolest this week" and the maker of the w
     <h2 id="fresh-h" class="font-display text-3xl font-semibold"><?= $user === null ? 'Fresh from the community' : 'Newest posts' ?></h2>
     <?php if ($posts): ?>
         <div class="mt-6 columns-1 gap-8 sm:columns-2 lg:columns-3">
-            <?php foreach ($posts as $p) { partial('post_card', ['p' => $p]); } ?>
+            <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
         </div>
         <?php if ($user === null): ?>
             <div class="tbh-card mt-4 p-6 text-center">

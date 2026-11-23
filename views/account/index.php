@@ -23,7 +23,7 @@
     <p class="mt-1 text-sm opacity-80">Drafts are only visible to you.</p>
     <?php if ($posts): ?>
         <div class="mt-6 columns-1 gap-8 sm:columns-2">
-            <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'showStatus' => true]); } ?>
+            <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'showStatus' => true, 'back' => 'members']); } ?>
         </div>
     <?php else: ?>
         <p class="mt-4 opacity-80">You have not posted anything yet.</p>
