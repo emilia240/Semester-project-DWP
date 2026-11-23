@@ -28,6 +28,18 @@ class AuthController extends BaseController
         $email      = '';
         $showResend = false;
 
+        // "Come back to the post after logging in": the heart sends a visitor here as ?page=login&back=21.
+        // We keep only a NUMBER (digits), never a web address, so this cannot be used to send someone to another website.
+        // Opening the login page without back= forgets an old one. A wrong password does not lose it.
+        if (!is_post()) {
+            $back = $_GET['back'] ?? '';
+            if (is_string($back) && ctype_digit($back) && $back !== '0' && strlen($back) <= 10) {
+                $_SESSION['login_back'] = (int)$back;
+            } else {
+                unset($_SESSION['login_back']);
+            }
+        }
+
         if (is_post()) {
 
             if (!csrf_check()) {
@@ -81,7 +93,13 @@ class AuthController extends BaseController
                     flash_set('success', 'Welcome back, ' . $user['Username'] . '!');
                     // Send an unfinished member to the first missing join step.
                     $missingStep = onboarding_next_step($this->db, confirm_logged_in());
-                    redirect_to(url($missingStep ?? 'home'));
+                    if ($missingStep !== null) {
+                        redirect_to(url($missingStep));
+                    }
+                    // Back to the post whose heart was clicked, if there was one (see the top of this method).
+                    $backId = (int)($_SESSION['login_back'] ?? 0);
+                    unset($_SESSION['login_back']);
+                    redirect_to($backId > 0 ? url('post', ['id' => $backId]) : url('home'));
                 }
             }
         }
