@@ -19,6 +19,12 @@ class ImageResizer
     public const MAX_SIDE   = 6000;
     public const MAX_PIXELS = 24000000;
 
+    // The SHAPE of the picture. The shorter side must be at least 200 pixels, and the longer side may be at most
+    // 2 times the shorter side. So 3:2, 4:3, 16:9, a square, 4:5, 3:4 and a phone picture 9:16 are all fine, and so is a
+    // 2:1 panorama, but a 3:1 strip or a 60 x 1600 line is not. Nothing is cropped or trimmed: a picture that fits these rules is only scaled, never cut.
+    public const MIN_SHORT_SIDE = 200;
+    public const MAX_RATIO      = 2;
+
     private ?GdImage $image = null;
 
     // Which picture types we can open: type number => name of the GD function that opens it.
@@ -80,6 +86,17 @@ class ImageResizer
         if ($width * $height > self::MAX_PIXELS) {
             $megapixels = round($width * $height / 1000000, 1);
             throw new UploadException("That picture is {$megapixels} megapixels. The limit is " . (self::MAX_PIXELS / 1000000) . ' megapixels. Please make a smaller copy.');
+        }
+        // The shape. min() and max() make this work for both directions (tall and wide). A phone photo that is
+        // stored sideways (EXIF) has width and height swapped, but the short and long side stay the same.
+        $short = min($width, $height);
+        $long  = max($width, $height);
+        if ($short < self::MIN_SHORT_SIDE) {
+            throw new UploadException("That picture is {$width} x {$height} pixels. The shorter side must be at least " . self::MIN_SHORT_SIDE . ' pixels.');
+        }
+        if ($long > self::MAX_RATIO * $short) {
+            $shape = $height > $width ? 'tall' : 'wide';
+            throw new UploadException("That picture is {$width} x {$height} pixels, a very {$shape} and thin shape. The longer side may be at most " . self::MAX_RATIO . ' times the shorter side. Please crop it to a more normal shape.');
         }
         // A phone photo can carry a note "turn me 90 degrees" (EXIF). Turning needs a second full-size copy in memory.
         $angle = $type === IMAGETYPE_JPEG ? $this->cameraAngle($file) : 0;

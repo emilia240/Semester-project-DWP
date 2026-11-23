@@ -175,6 +175,48 @@ $name = expectAccepted('the biggest allowed picture (23.8 megapixels) works', fi
 printf("        took %.1f seconds, PHP peak memory %d MB\n", microtime(true) - $t, memory_get_peak_usage(true) / 1048576);
 
 // ---------------------------------------------------------------------------------------------
+echo "\nB2. Strange SHAPES (Kim's very tall picture): the shorter side at least 200 px, the longer side at most 2 times the shorter\n";
+makeJpeg("$inbox/strip1.jpg", 60, 1600);
+expectRefused('a thin strip 60 x 1600 (shorter side under 200 pixels)', fileEntry("$inbox/strip1.jpg"), 'shorter side');
+makeJpeg("$inbox/strip2.jpg", 1, 6000);
+expectRefused('a 1 pixel wide line 1 x 6000', fileEntry("$inbox/strip2.jpg"), 'shorter side');
+makeJpeg("$inbox/strip3.jpg", 300, 1500);
+expectRefused('a tall picture 300 x 1500 (5 times as tall as wide)', fileEntry("$inbox/strip3.jpg"), 'thin shape');
+makeJpeg("$inbox/strip4.jpg", 1500, 300);
+expectRefused('the same turned sideways, 1500 x 300 (the rule works both ways)', fileEntry("$inbox/strip4.jpg"), 'thin shape');
+makeJpeg("$inbox/three1.jpg", 2400, 800);
+expectRefused('a 3:1 panorama 2400 x 800 (too thin to look good)', fileEntry("$inbox/three1.jpg"), 'thin shape');
+makeJpeg("$inbox/three2.jpg", 800, 2400);
+expectRefused('a 1:3 tall picture 800 x 2400 (too thin to look good)', fileEntry("$inbox/three2.jpg"), 'thin shape');
+makeJpeg("$inbox/strip5.jpg", 2000, 6000 + 1);
+expectRefused('2000 x 6001 (too long by a hair)', fileEntry("$inbox/strip5.jpg"), 'pixels');
+makeJpeg("$inbox/edge1.jpg", 199, 400);
+expectRefused('199 x 400 (one pixel under the minimum)', fileEntry("$inbox/edge1.jpg"), 'shorter side');
+makeJpeg("$inbox/edge2.jpg", 200, 200);
+expectAccepted('200 x 200 (exactly the minimum) is fine', fileEntry("$inbox/edge2.jpg"));
+makeJpeg("$inbox/edge3.jpg", 600, 1201);
+expectRefused('600 x 1201 (a hair over 2 times)', fileEntry("$inbox/edge3.jpg"), 'thin shape');
+
+// Normal shapes must NOT be refused, and must NOT be cut: only scaled, the shape stays the same.
+foreach ([
+    'a normal landscape photo 4000 x 3000'    => [4000, 3000],
+    'a portrait photo 3000 x 4000'            => [3000, 4000],
+    'a 16:9 picture 1920 x 1080'              => [1920, 1080],
+    'a square picture 2000 x 2000'            => [2000, 2000],
+    'a phone picture 9:16, 1080 x 1920'       => [1080, 1920],
+    'a panorama exactly 2:1, 2400 x 1200'     => [2400, 1200],
+    'a tall picture exactly 1:2, 1000 x 2000' => [1000, 2000],
+] as $label => [$w0, $h0]) {
+    makeJpeg("$inbox/shape.jpg", $w0, $h0);
+    $name = expectAccepted($label, fileEntry("$inbox/shape.jpg"));
+    if ($name !== null) {
+        [$w, $h] = getimagesize("$store/$name");
+        $same = abs(($w / $h) - ($w0 / $h0)) < 0.02;
+        result('...and it was only scaled, not cut (same shape)', $same, "{$w0}x{$h0} became {$w}x{$h}");
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 echo "\nC. Files that are too heavy\n";
 makeJpeg("$inbox/heavy.jpg", 4000, 4000, 100, true);
 $mb = round(filesize("$inbox/heavy.jpg") / 1048576, 1);
