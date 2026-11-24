@@ -265,6 +265,9 @@ so every check that matters is repeated in PHP.
     /* ---------- text box helpers: B / I wrap the selected text, the link button adds https:// ---------- */
     function wrap(textarea, mark) {
         var s = textarea.selectionStart, e = textarea.selectionEnd, v = textarea.value;
+        // A double click often selects the space after the word too. The marks must touch the words, or they stay visible as * on the page.
+        while (s < e && /\s/.test(v.charAt(s))) { s++; }
+        while (e > s && /\s/.test(v.charAt(e - 1))) { e--; }
         textarea.value = v.slice(0, s) + mark + v.slice(s, e) + mark + v.slice(e);
         textarea.focus();
         textarea.setSelectionRange(s + mark.length, e + mark.length);
@@ -357,14 +360,22 @@ so every check that matters is repeated in PHP.
             // Build formatting elements ourselves. Member text always stays in text nodes.
             var description = $('[data-pv=description]', d);
             var text = pf.elements.description.value || pf.elements.title.value;
-            var pattern = /\*\*(.+?)\*\*|\*(.+?)\*|#([a-z0-9_-]+)/gi;
+            // Match the same bold and italic markers as format_text() in PHP, including text across lines.
+            var pattern = /\*\*\*([\s\S]+?)\*\*\*|\*\*([\s\S]+?)\*\*|(?<![\w*])\*(?!\s)([\s\S]+?)\*(?![\w*])|#([a-z0-9_-]+)/gi;
             var match, previous = 0;
             description.replaceChildren();
             while ((match = pattern.exec(text)) !== null) {
                 description.appendChild(document.createTextNode(text.slice(previous, match.index)));
-                var part = document.createElement(match[1] ? 'strong' : (match[2] ? 'em' : 'span'));
-                if (match[3]) { part.className = 'font-bold text-primary'; }
-                part.textContent = match[1] || match[2] || '#' + match[3];
+                var part = document.createElement(match[1] || match[2] ? 'strong' : (match[3] ? 'em' : 'span'));
+                if (match[1]) {
+                    // Nest italic inside bold when the text has three stars on each side.
+                    var italic = document.createElement('em');
+                    italic.textContent = match[1];
+                    part.appendChild(italic);
+                } else {
+                    if (match[4]) { part.className = 'font-bold text-primary'; }
+                    part.textContent = match[2] || match[3] || '#' + match[4];
+                }
                 description.appendChild(part);
                 previous = pattern.lastIndex;
             }

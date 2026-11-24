@@ -148,8 +148,10 @@ Links only match http:// and https:// (never javascript:), open in a new tab, an
 function format_text(string $text): string
 {
     $safe = e($text);
+    $safe = preg_replace('~\*\*\*(.+?)\*\*\*~s', '<strong><em>$1</em></strong>', $safe);   // ***both*** first, so the tags nest correctly
     $safe = preg_replace('~\*\*(.+?)\*\*~s', '<strong>$1</strong>', $safe);
-    $safe = preg_replace('~(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])~s', '<em>$1</em>', $safe);
+    // *italic*: the opening * must touch the first word, a space before the closing * is forgiven (a double click often selects it).
+    $safe = preg_replace('~(?<![\w*])\*(?!\s)(.+?)\*(?![\w*])~s', '<em>$1</em>', $safe);
     // Keep links and our formatting tags separate so a #tag cannot insert HTML into an href.
     $parts = preg_split('~(<[^>]+>|https?://[^\s<]+)~i', $safe, -1, PREG_SPLIT_DELIM_CAPTURE);
     foreach ($parts as $index => $part) {
