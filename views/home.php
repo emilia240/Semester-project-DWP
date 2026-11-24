@@ -6,7 +6,8 @@ The front page. One address, three versions:
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
 Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week sits next to the greeting.
 Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
-       $maker (the maker of the week, or null: then the card is left out).
+       $maker (the maker of the week, or null: then the card is left out),
+       $pg (the page number), $hasNext (is there a next page?) and $atPageLimit.
 */
 ?>
 <?php if ($user === null): ?>
@@ -113,12 +114,35 @@ $hasAside = !empty($coolest);
                 <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
             </div>
             <?php if ($user === null): ?>
-                <div class="tbh-card mt-4 p-6 text-center">
-                    <p class="font-bold">There is more to see inside.</p>
-                    <p class="mt-1 opacity-80">Join to share your own work and follow the makers you like.</p>
-                    <a href="<?= e(url('join')) ?>" class="btn btn-primary mt-4 rounded-full">Join us</a>
-                </div>
+                <?php // Visitors only get a taste of the feed. ?>
+                <?php if ($hasNext): ?>
+                    <div class="tbh-card mt-4 p-6 text-center sm:p-10">
+                        <p class="font-hand text-3xl text-accent">There is so much more</p>
+                        <h3 class="mt-1 font-display text-3xl font-semibold">Want to see more?</h3>
+                        <p class="mx-auto mt-3 max-w-md opacity-80">Join To Be Human to keep scrolling, share your own work and follow the makers you like.</p>
+                        <a href="<?= e(url('join')) ?>" class="btn btn-primary btn-lg mt-6 rounded-full">Sign up, it is free <?= icon('arrow', 20) ?></a>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <?php // Members: Previous / Next page, and a friendly end. ?>
+                <nav class="mt-6 flex items-center justify-between gap-3" aria-label="Pages of the feed">
+                    <?php if ($pg > 1): ?>
+                        <a href="<?= e(url('home', ['tab' => $tab, 'pg' => $pg - 1]) . '#feed') ?>" class="btn rounded-full"><?= icon('back', 16) ?> Previous page</a>
+                    <?php else: ?><span></span><?php endif; ?>
+                    <span class="text-sm opacity-80">Page <?= (int)$pg ?></span>
+                    <?php if ($hasNext && !$atPageLimit): ?>
+                        <a href="<?= e(url('home', ['tab' => $tab, 'pg' => $pg + 1]) . '#feed') ?>" class="btn btn-primary rounded-full">Next page <?= icon('arrow', 16) ?></a>
+                    <?php else: ?><span></span><?php endif; ?>
+                </nav>
+                <?php if ($atPageLimit): ?>
+                    <p class="mt-8 text-center font-display text-xl opacity-80">You have reached the page limit. More posts exist but cannot be shown here.</p>
+                <?php elseif (!$hasNext): ?>
+                    <p class="mt-8 text-center font-display text-xl opacity-80">You’re all caught up. Go make something!</p>
+                <?php endif; ?>
             <?php endif; ?>
+        <?php elseif ($pg > 1): ?>
+            <p class="mt-6 text-lg opacity-80">There are no more posts on this page.</p>
+            <p class="mt-4"><a href="<?= e(url('home', ['tab' => $tab]) . '#feed') ?>" class="btn rounded-full">Back to the first page</a></p>
         <?php else: ?>
             <p class="mt-6 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
             <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
