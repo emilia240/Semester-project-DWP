@@ -122,6 +122,26 @@ class PostModel
         );
     }
 
+    /*
+    The maker of the week, or null when nobody has likes or saves this week.
+    The maker_of_the_week view chooses the post; this query adds the maker's name and cover picture.
+    The view can use idx_postlike_post_liked and idx_boardpost_post to find activity for each post.
+    The cover join can use uq_postimage_position. We prepare even though there are no parameters.
+    */
+    public function makerOfTheWeek(): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT m.UserID, m.Username, m.Tagline, m.PostID, m.PostTitle, u.FirstName, u.LastName,
+                    p.AltText, i.FileName AS CoverFile
+               FROM `maker_of_the_week` m
+               JOIN `User` u      ON u.UserID = m.UserID
+               JOIN `Post` p      ON p.PostID = m.PostID
+               JOIN `PostImage` i ON i.PostID = m.PostID AND i.Position = 1'
+        );
+        $stmt->execute();
+        return $stmt->fetch() ?: null;
+    }
+
     // The shared query behind the lists: post + author + cover picture + category names and tags.
     // PostTag's primary key finds the tags for each post; Tag's primary key finds each tag name.
     // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting

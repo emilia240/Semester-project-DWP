@@ -4,8 +4,9 @@ The front page. One address, three versions:
   visitor ($user is null)      big "To be Human" + intro + join buttons
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
-Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week comes later.
-Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week").
+Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week sits next to the greeting.
+Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
+       $maker (the maker of the week, or null: then the card is left out).
 */
 ?>
 <?php if ($user === null): ?>
@@ -40,8 +41,19 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
             </div>
         </div>
     </section>
+
+    <?php if ($maker !== null): ?>
+        <section class="mx-auto grid max-w-[120rem] gap-10 px-4 py-14 sm:px-16 md:grid-cols-2 md:items-center md:px-24 lg:px-40" aria-label="About and maker of the week">
+            <div>
+                <h2 class="text-4xl font-semibold leading-tight sm:text-5xl">Post what you made. Say how you made it.</h2>
+                <p class="mt-5 max-w-xl text-xl opacity-80">Everything here was drawn, stitched, thrown, folded or painted by a person. Beginners and experts sit side by side, and the messy middle is welcome.</p>
+            </div>
+            <?php partial('maker_card', ['maker' => $maker]); ?>
+        </section>
+    <?php endif; ?>
 <?php else: ?>
-    <section class="mx-auto max-w-[120rem] px-4 pb-16 pt-12 sm:px-16 md:px-24 lg:px-40">
+    <section class="mx-auto grid max-w-[120rem] gap-10 px-4 pb-10 pt-12 sm:px-16 md:px-24 lg:px-40 <?= $maker !== null ? 'md:grid-cols-2 md:items-center' : '' ?>">
+        <div>
         <?php if ($user['RoleName'] === 'admin'): ?>
             <p class="font-hand text-5xl leading-none text-accent sm:text-6xl">Hi Boss</p>
             <h1 class="mt-3 text-6xl font-semibold leading-[0.95] sm:text-7xl lg:text-8xl">Welcome back.</h1>
@@ -53,6 +65,8 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
             <p class="mt-5 text-2xl opacity-80">Here is what the community made lately. Got something to show?</p>
             <div class="mt-8 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary btn-lg rounded-full">Make a post <?= icon('arrow', 20) ?></a><a href="<?= e(url('members')) ?>" class="btn btn-ghost btn-lg rounded-full">My account</a></div>
         <?php endif; ?>
+        </div>
+        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker]); } ?>
     </section>
 <?php endif; ?>
 

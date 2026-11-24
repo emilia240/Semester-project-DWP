@@ -31,6 +31,7 @@ class HomeController extends BaseController
             'posts'   => $posts,
             'tab'     => $tab,
             'coolest' => $model->coolest($this->viewerId()),
+            'maker'   => $model->makerOfTheWeek(),
         ]);
     }
 }
