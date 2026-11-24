@@ -108,6 +108,20 @@ class PostModel
         return $this->cards($where, [':u' => $userId], 100, 0, $viewerId);
     }
 
+    /*
+    "Coolest this week": the (up to) 4 posts with the most likes in the last 7 days. The VIEW sticky_posts does the counting
+    and the choosing; here we only join it to get the same card data as the feed (cover picture, author, ...).
+    No likes this week = an empty list, and the front page simply leaves the box out.
+    */
+    public function coolest(int $viewerId = 0): array
+    {
+        return $this->cards(
+            self::FEED_WHERE, [], 4, 0, $viewerId,
+            'JOIN `sticky_posts` s ON s.PostID = p.PostID',
+            's.LikesThisWeek DESC, p.UploadedAt DESC, p.PostID DESC'
+        );
+    }
+
     // The shared query behind the lists: post + author + cover picture + category names and tags.
     // PostTag's primary key finds the tags for each post; Tag's primary key finds each tag name.
     // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting

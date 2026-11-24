@@ -26,6 +26,11 @@ class HomeController extends BaseController
             ? $model->latest($limit, 0, $this->viewerId())
             : $model->hot($limit, 0, $this->viewerId());
 
-        $this->render('home', ['title' => SITE_NAME, 'posts' => $posts, 'tab' => $tab]);
+        $this->render('home', [
+            'title'   => SITE_NAME,
+            'posts'   => $posts,
+            'tab'     => $tab,
+            'coolest' => $model->coolest($this->viewerId()),
+        ]);
     }
 }

@@ -4,8 +4,8 @@ The front page. One address, three versions:
   visitor ($user is null)      big "To be Human" + intro + join buttons
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
-Under the top part: the feed with the tabs "Hot feed" and "Newest". "Coolest this week" and the maker of the week come later.
-Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest').
+Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week comes later.
+Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week").
 */
 ?>
 <?php if ($user === null): ?>
@@ -56,37 +56,58 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest').
     </section>
 <?php endif; ?>
 
-<?php /* the feed: tabs, then the posts. A few for visitors (with a Join prompt), more for members. */ ?>
-<section class="mx-auto max-w-[120rem] px-4 pb-16 sm:px-16 md:px-24 lg:px-40" id="feed" aria-labelledby="feed-h">
-    <h2 id="feed-h" class="sr-only">The feed</h2>
-
-    <?php // These tabs are LINKS (each one loads the page again with ?tab=...), so they are a <nav> and not role="tablist". ?>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <nav class="tabs tabs-border" aria-label="Feed">
-            <a class="tab text-base font-bold <?= $tab === 'hot' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>"<?= $tab === 'hot' ? ' aria-current="page"' : '' ?>>Hot feed</a>
-            <a class="tab text-base font-bold <?= $tab === 'newest' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'newest']) . '#feed') ?>"<?= $tab === 'newest' ? ' aria-current="page"' : '' ?>>Newest</a>
-        </nav>
-
-        <?php // Grid / Single only works with JavaScript, so the buttons start hidden and app.js shows them. ?>
-        <div class="join hidden" role="group" aria-label="View" data-view-group>
-            <button type="button" class="btn btn-sm join-item btn-neutral" data-view="grid" aria-pressed="true"><?= icon('grid', 16) ?> Grid</button>
-            <button type="button" class="btn btn-sm join-item" data-view="single" aria-pressed="false"><?= icon('single', 16) ?> Single</button>
-        </div>
-    </div>
-
-    <?php if ($posts): ?>
-        <div class="tbh-feed mt-6 columns-1 gap-8 sm:columns-2 lg:columns-3">
-            <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
-        </div>
-        <?php if ($user === null): ?>
-            <div class="tbh-card mt-4 p-6 text-center">
-                <p class="font-bold">There is more to see inside.</p>
-                <p class="mt-1 opacity-80">Join to share your own work and follow the makers you like.</p>
-                <a href="<?= e(url('join')) ?>" class="btn btn-primary mt-4 rounded-full">Join us</a>
+<?php
+/* the feed: tabs, then the posts. A few for visitors (with a Join prompt), more for members.
+   Next to it (above it on a phone) the box "Coolest this week". With no likes this week the box is left out and the feed gets the full width. */
+$hasAside = !empty($coolest);
+?>
+<section class="mx-auto grid max-w-[120rem] gap-10 px-4 pb-16 sm:px-16 md:px-24 lg:px-40 <?= $hasAside ? 'lg:grid-cols-[minmax(0,1fr)_25rem]' : '' ?>" id="feed" aria-labelledby="feed-h">
+    <?php if ($hasAside): ?>
+        <aside class="space-y-5 self-start lg:order-2 lg:sticky lg:top-20" aria-label="This week">
+            <div class="relative rounded-box border-2 border-dashed border-accent bg-base-200 p-5">
+                <span class="absolute -right-2 -top-5 rotate-[14deg] text-accent" aria-hidden="true"><?= craft_icon('star', 40) ?></span>
+                <h2 class="font-display text-2xl font-semibold">Coolest this week</h2>
+                <p class="font-hand text-2xl leading-tight text-accent">Pinned up just for you!</p>
+                <svg class="text-accent" width="120" height="8" viewBox="0 0 120 8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4c10-5 18 5 29 0s18 5 29 0 18 5 29 0 18 5 29 0"/></svg>
+                <?php // A grid keeps each tape with its picture instead of splitting it between columns. ?>
+                <div class="mt-5 grid grid-cols-2 items-start gap-x-4">
+                    <?php foreach ($coolest as $i => $p) { partial('polaroid_card', ['p' => $p, 'i' => $i]); } ?>
+                </div>
             </div>
-        <?php endif; ?>
-    <?php else: ?>
-        <p class="mt-6 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
-        <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
+        </aside>
     <?php endif; ?>
+
+    <div class="min-w-0 lg:order-1">
+        <h2 id="feed-h" class="sr-only">The feed</h2>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <?php // These tabs are LINKS (each one loads the page again with ?tab=...), so they are a <nav> and not role="tablist". ?>
+            <nav class="tabs tabs-border" aria-label="Feed">
+                <a class="tab text-base font-bold <?= $tab === 'hot' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>"<?= $tab === 'hot' ? ' aria-current="page"' : '' ?>>Hot feed</a>
+                <a class="tab text-base font-bold <?= $tab === 'newest' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'newest']) . '#feed') ?>"<?= $tab === 'newest' ? ' aria-current="page"' : '' ?>>Newest</a>
+            </nav>
+
+            <?php // Grid / Single only works with JavaScript, so the buttons start hidden and app.js shows them. ?>
+            <div class="join hidden" role="group" aria-label="View" data-view-group>
+                <button type="button" class="btn btn-sm join-item btn-neutral" data-view="grid" aria-pressed="true"><?= icon('grid', 16) ?> Grid</button>
+                <button type="button" class="btn btn-sm join-item" data-view="single" aria-pressed="false"><?= icon('single', 16) ?> Single</button>
+            </div>
+        </div>
+
+        <?php if ($posts): ?>
+            <div class="tbh-feed mt-6 columns-1 gap-8 md:columns-2 <?= $hasAside ? '2xl:columns-3' : 'lg:columns-3' ?>">
+                <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
+            </div>
+            <?php if ($user === null): ?>
+                <div class="tbh-card mt-4 p-6 text-center">
+                    <p class="font-bold">There is more to see inside.</p>
+                    <p class="mt-1 opacity-80">Join to share your own work and follow the makers you like.</p>
+                    <a href="<?= e(url('join')) ?>" class="btn btn-primary mt-4 rounded-full">Join us</a>
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <p class="mt-6 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
+            <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
+        <?php endif; ?>
+    </div>
 </section>
