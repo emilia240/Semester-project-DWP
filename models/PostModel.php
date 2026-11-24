@@ -90,7 +90,8 @@ class PostModel
         return $this->cards($where, [':u' => $userId], 100, 0, $viewerId);
     }
 
-    // The shared query behind the lists: post + author + cover picture + category names.
+    // The shared query behind the lists: post + author + cover picture + category names and tags.
+    // PostTag's primary key finds the tags for each post; Tag's primary key finds each tag name.
     // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting
     // ATTR_EMULATE_PREPARES = false does not allow the same :name twice in one query.
     private function cards(string $where, array $params, int $limit, int $offset, int $viewerId = 0): array
@@ -104,7 +105,10 @@ class PostModel
                     i.FileName AS CoverFile,
                     (SELECT GROUP_CONCAT(c.CategoryName ORDER BY c.CategoryName SEPARATOR '|')
                        FROM `PostCategory` pc JOIN `Category` c ON c.CategoryID = pc.CategoryID
-                      WHERE pc.PostID = p.PostID) AS Categories
+                      WHERE pc.PostID = p.PostID) AS Categories,
+                    (SELECT GROUP_CONCAT(t.TagName ORDER BY t.TagName SEPARATOR '|')
+                       FROM `PostTag` pt JOIN `Tag` t ON t.TagID = pt.TagID
+                      WHERE pt.PostID = p.PostID) AS Tags
                FROM `Post` p
                JOIN `User` u ON u.UserID = p.UserID
                JOIN `PostImage` i ON i.PostID = p.PostID AND i.Position = 1

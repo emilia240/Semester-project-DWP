@@ -7,18 +7,24 @@ Optional: $back = which page the heart sends a member back to when JavaScript is
 $showStatus = $showStatus ?? false;
 $back = $back ?? 'post';
 $cats = $p['Categories'] !== null ? explode('|', $p['Categories']) : [];
+$tags = $p['Tags'] !== null ? explode('|', $p['Tags']) : [];            // free tags, only letters, digits, - and _, so '|' cannot be inside one
 $link = e(url('post', ['id' => $p['PostID']]));
 $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'LastName' => $p['AuthorLastName']];
 ?>
 <article class="mb-10 break-inside-avoid px-1">
     <header class="flex items-center gap-3 pb-3">
         <?= avatar($author, 40) ?>
-        <div class="min-w-0 flex-1"><p class="truncate font-bold"><?= e($p['AuthorUsername']) ?></p><p class="whitespace-nowrap text-sm opacity-80"><?= e(when($p['UploadedAt'])) ?></p></div>
+        <div class="min-w-0 flex-1">
+            <?php // Keep the full username visible even when the card is narrow. ?>
+            <p class="break-all font-bold"><?= e($p['AuthorUsername']) ?></p>
+            <p class="whitespace-nowrap text-sm opacity-80"><?= e(when($p['UploadedAt'])) ?></p>
+        </div>
         <?php if ($showStatus): ?>
             <span class="badge <?= $p['IsDraft'] ? 'badge-warning' : 'badge-success' ?> badge-sm font-bold"><?= $p['IsDraft'] ? 'Draft' : 'Published' ?></span>
         <?php endif; ?>
-        <div class="hidden flex-wrap justify-end gap-1 sm:flex">
-            <?php foreach ($cats as $c): ?><span class="badge badge-ghost"><?= e($c) ?></span><?php endforeach; ?>
+        <?php // Keep the craft badges on the right, with room for the username. ?>
+        <div class="hidden max-w-[45%] flex-wrap justify-end gap-1 sm:flex">
+            <?php foreach ($cats as $c): ?><span class="badge badge-ghost badge-sm h-auto max-w-full break-all whitespace-normal"><?= e($c) ?></span><?php endforeach; ?>
         </div>
     </header>
 
@@ -33,10 +39,15 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
 
     <h3 class="mt-3 font-display text-xl font-semibold leading-snug"><a href="<?= $link ?>" class="hover:underline"><?= e($p['PostTitle']) ?></a></h3>
 
+    <?php if ($tags): ?>
+        <p class="mt-1 flex flex-wrap gap-2 text-sm"><?php foreach ($tags as $t): ?><span class="font-bold text-primary">#<?= e($t) ?></span><?php endforeach; ?></p>
+    <?php endif; ?>
+
     <?php // A draft has no heart (it is not public), so no footer either. ?>
     <?php if (!$p['IsDraft']): ?>
         <footer class="mt-1 flex items-center gap-1 text-base-content/80">
             <?php partial('like_button', ['p' => $p, 'back' => $back]); ?>
+            <button type="button" class="btn btn-ghost btn-sm ml-auto" data-copy="<?= $link ?>" aria-label="Copy link"><?= icon('link', 18) ?></button>
         </footer>
     <?php endif; ?>
 </article>
