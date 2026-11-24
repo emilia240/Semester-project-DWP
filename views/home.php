@@ -6,7 +6,7 @@ The front page. One address, three versions:
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
 Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week sits next to the greeting.
 Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
-       $maker (the maker of the week, or null: then the card is left out),
+       $maker (the maker of the week, or null: then the card is left out), $makerComments (their post's newest comments, may be empty),
        $pg (the page number), $hasNext (is there a next page?), $atPageLimit,
        and $pins (up to five pictures for the visitor hero).
 */
@@ -74,7 +74,7 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
             <h2 class="text-4xl font-semibold leading-tight sm:text-5xl">Post what you made. Say how you made it.</h2>
             <p class="mt-5 max-w-xl text-xl opacity-80">Everything here was drawn, stitched, thrown, folded or painted by a person. Beginners and experts sit side by side, and the messy middle is welcome.</p>
         </div>
-        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker]); } ?>
+        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker, 'comments' => $makerComments]); } ?>
     </section>
 <?php else: ?>
     <section class="mx-auto grid max-w-[120rem] gap-10 px-4 pb-10 pt-12 sm:px-16 md:px-24 lg:px-40 <?= $maker !== null ? 'md:grid-cols-2 md:items-center' : '' ?>">
@@ -91,7 +91,7 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
             <div class="mt-8 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary btn-lg rounded-full">Make a post <?= icon('arrow', 20) ?></a><a href="<?= e(url('members')) ?>" class="btn btn-ghost btn-lg rounded-full">My account</a></div>
         <?php endif; ?>
         </div>
-        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker]); } ?>
+        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker, 'comments' => $makerComments]); } ?>
     </section>
 <?php endif; ?>
 

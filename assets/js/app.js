@@ -317,6 +317,54 @@ so every check that matters is repeated in PHP.
         }
     }
 
+    /* ---------- Maker card: the newest comments fade in one after another ----------
+       The comments rest while the whole card is hovered or focused, while the tab is hidden,
+       or when less motion is requested. Play overrides the current hover and focus until they leave the card. */
+    $$('[data-comments]').forEach(function (box) {
+        var card = box.closest('[data-maker-card]');
+        var items = $$('[data-comment]', box), now = 0, stopped = false, ignoreHover = false, ignoreFocus = false, timer;
+        var button = $('[data-comments-pause]', box);
+        var interval = parseInt(box.getAttribute('data-interval'), 10) || 5000;
+        if (items.length < 2) { return; }
+        var calm = function () {
+            return document.documentElement.classList.contains('reduce-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        };
+        var nextComment = function () {
+            items[now].classList.remove('is-active'); items[now].setAttribute('aria-hidden', 'true');
+            now = (now + 1) % items.length;
+            items[now].classList.add('is-active'); items[now].removeAttribute('aria-hidden');
+        };
+        var startTimer = function () {
+            // Restart after Play so the next comment does not follow too soon.
+            clearInterval(timer);
+            timer = setInterval(function () {
+                if (stopped || (card.matches(':hover') && !ignoreHover) || (card.contains(document.activeElement) && !ignoreFocus)
+                    || document.hidden || calm()) { return; }
+                nextComment();
+            }, interval);
+        };
+        startTimer();
+        card.addEventListener('mouseleave', function () { ignoreHover = false; });
+        card.addEventListener('focusout', function (event) { if (!card.contains(event.relatedTarget)) { ignoreFocus = false; } });
+        if (button) {
+            button.hidden = false;
+            button.addEventListener('click', function () {
+                stopped = !stopped;
+                button.setAttribute('aria-pressed', stopped ? 'true' : 'false');
+                button.setAttribute('aria-label', stopped ? 'Play the comments' : 'Pause the comments');
+                $('[data-comments-pause-icon]', button).hidden = stopped;
+                $('[data-comments-play-icon]', button).hidden = !stopped;
+                if (!stopped) {
+                    // Play also works while the button keeps focus or the mouse stays on the card.
+                    ignoreHover = card.matches(':hover');
+                    ignoreFocus = card.contains(document.activeElement);
+                    if (!document.hidden && !calm()) { nextComment(); }
+                    startTimer();
+                }
+            });
+        }
+    });
+
     /* ---------- Back button (data-back): go back if there is somewhere to go back to ---------- */
     $$('[data-back]').forEach(function (a) {
         a.addEventListener('click', function (e) {

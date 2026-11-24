@@ -142,6 +142,26 @@ class PostModel
         return $stmt->fetch() ?: null;
     }
 
+    /*
+    The newest comments under ONE post (for the maker of the week card). Comments of banned members are left out, like their posts.
+    The id of the post is a parameter, never glued into the SQL. idx_comment_post_created finds the comments of one post in order.
+    */
+    public function latestComments(int $postId, int $limit = 4): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT c.CommentID, c.CommentText, c.CreatedAt, u.UserID, u.Username, u.FirstName, u.LastName
+               FROM `Comment` c
+               JOIN `User` u ON u.UserID = c.UserID
+              WHERE c.PostID = :post AND (u.IsBanned = 0 OR u.BannedUntil <= NOW())
+              ORDER BY c.CreatedAt DESC, c.CommentID DESC
+              LIMIT :limit'
+        );
+        $stmt->bindValue(':post', $postId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     // The shared query behind the lists: post + author + cover picture + category names and tags.
     // PostTag's primary key finds the tags for each post; Tag's primary key finds each tag name.
     // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting

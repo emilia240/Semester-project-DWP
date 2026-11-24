@@ -44,6 +44,8 @@ class HomeController extends BaseController
             : $model->hot($perPage + 1, $offset, $this->viewerId());
         $hasNext = count($rows) > $perPage;
 
+        $maker = $model->makerOfTheWeek();
+
         $this->render('home', [
             'title'   => SITE_NAME,
             'posts'   => array_slice($rows, 0, $perPage),
@@ -53,7 +55,9 @@ class HomeController extends BaseController
             'tab'     => $tab,
             'pg'      => $pg,
             'coolest' => $model->coolest($this->viewerId()),
-            'maker'   => $model->makerOfTheWeek(),
+            'maker'   => $maker,
+            // The newest comments under the maker's post fade in and out on the maker card.
+            'makerComments' => $maker !== null ? $model->latestComments((int)$maker['PostID'], 4) : [],
             // Only visitors need the five hottest posts for the hero pictures.
             'pins'    => $visitor ? $model->hot(5) : [],
         ]);

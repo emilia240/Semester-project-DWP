@@ -121,6 +121,9 @@
   /* Only the active hero picture is visible; app.js changes the active slide. */
   .tbh-hero-slide { opacity: 0; transition: opacity 0.5s ease; }
   .tbh-hero-slide.is-active { opacity: 1; }
+  /* The comments on the maker card fade and rise a little; app.js changes the active one. */
+  .tbh-fade { opacity: 0; transform: translateY(0.4rem); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .tbh-fade.is-active { opacity: 1; transform: none; }
   .tbh-card { background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: var(--radius-box); }
   /* the heart: filled in the main colour when the member liked the post (the same attribute is read by screen readers) */
   .tbh-like[aria-pressed="true"] svg { fill: currentColor; color: var(--color-primary); }
