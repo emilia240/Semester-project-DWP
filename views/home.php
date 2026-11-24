@@ -173,3 +173,31 @@ $hasAside = !empty($coolest);
         <?php endif; ?>
     </div>
 </section>
+
+<?php if ($user === null): ?>
+    <?php // About the platform: visitors only. The text is fixed here for now; the admin will be able to edit it later (Must item). ?>
+    <section class="border-t border-base-300 bg-base-200" aria-labelledby="about-h">
+        <div class="mx-auto grid max-w-[120rem] gap-10 px-4 py-14 sm:px-16 md:px-24 lg:grid-cols-2 lg:gap-16 lg:px-40 lg:py-20">
+            <div class="min-w-0">
+                <p class="font-hand text-3xl text-accent">About the platform</p>
+                <h2 id="about-h" class="mt-2 text-4xl font-semibold leading-tight sm:text-5xl">We built this because a feed of generated images is not a community.</h2>
+                <p class="mt-6 max-w-xl text-lg leading-relaxed opacity-90">To Be Human is for people who make things: illustrators, painters, sewists, crocheters, knotters, folders, potters. One rule holds the whole place up: the work you post has to be yours, made by you, without generative tools.</p>
+                <p class="mt-4 max-w-xl text-lg leading-relaxed opacity-90">That rule is why beginners post their first crooked hoop here, and why makers who teach technique can be certain their audience is real.</p>
+            </div>
+            <ul class="min-w-0 space-y-4 self-center">
+                <li class="border-l-4 border-accent bg-base-100 p-5">
+                    <h3 class="font-display text-xl font-semibold">No generative content</h3>
+                    <p class="mt-1 opacity-80">No AI images, generative fill or AI upscaling.</p>
+                </li>
+                <li class="border-l-4 border-primary bg-base-100 p-5">
+                    <h3 class="font-display text-xl font-semibold">Process over polish</h3>
+                    <p class="mt-1 opacity-80">Materials, hours and mistakes belong in the caption. That’s the interesting part.</p>
+                </li>
+                <li class="border-l-4 border-secondary bg-base-100 p-5">
+                    <h3 class="font-display text-xl font-semibold">Every discipline, every level</h3>
+                    <p class="mt-1 opacity-80">Sewing sits beside digital illustration. Year one sits beside year thirty.</p>
+                </li>
+            </ul>
+        </div>
+    </section>
+<?php endif; ?>
