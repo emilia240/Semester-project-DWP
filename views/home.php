@@ -68,15 +68,14 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
         </div>
     </section>
 
-    <?php if ($maker !== null): ?>
-        <section class="mx-auto grid max-w-[120rem] gap-10 px-4 py-14 sm:px-16 md:grid-cols-2 md:items-center md:px-24 lg:px-40" aria-label="About and maker of the week">
-            <div>
-                <h2 class="text-4xl font-semibold leading-tight sm:text-5xl">Post what you made. Say how you made it.</h2>
-                <p class="mt-5 max-w-xl text-xl opacity-80">Everything here was drawn, stitched, thrown, folded or painted by a person. Beginners and experts sit side by side, and the messy middle is welcome.</p>
-            </div>
-            <?php partial('maker_card', ['maker' => $maker]); ?>
-        </section>
-    <?php endif; ?>
+    <?php // The intro text always shows. The maker card joins it only when there is a maker this week. ?>
+    <section class="mx-auto grid max-w-[120rem] gap-10 px-4 py-14 sm:px-16 md:px-24 lg:px-40 <?= $maker !== null ? 'md:grid-cols-2 md:items-center' : '' ?>" aria-label="<?= $maker !== null ? 'About and maker of the week' : 'About' ?>">
+        <div>
+            <h2 class="text-4xl font-semibold leading-tight sm:text-5xl">Post what you made. Say how you made it.</h2>
+            <p class="mt-5 max-w-xl text-xl opacity-80">Everything here was drawn, stitched, thrown, folded or painted by a person. Beginners and experts sit side by side, and the messy middle is welcome.</p>
+        </div>
+        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker]); } ?>
+    </section>
 <?php else: ?>
     <section class="mx-auto grid max-w-[120rem] gap-10 px-4 pb-10 pt-12 sm:px-16 md:px-24 lg:px-40 <?= $maker !== null ? 'md:grid-cols-2 md:items-center' : '' ?>">
         <div>
