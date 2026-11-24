@@ -29,7 +29,7 @@ foreach ($isEdit ? $edit['images'] : [] as $image) {
         <div class="alert alert-error mt-6" role="alert"><span>Please look at the red messages below. Your pictures have to be chosen again.</span></div>
     <?php endif; ?>
 
-    <form method="post" enctype="multipart/form-data" class="mt-8 space-y-7" id="post-form" data-post-form data-max-bytes="<?= ImageUploader::fileLimitBytes() ?>" data-max-steps="<?= PostController::MAX_STEP_PHOTOS ?>" novalidate>
+    <form method="post" enctype="multipart/form-data" class="mt-8 space-y-7" id="post-form" data-post-form data-form-key="<?= e($isEdit ? 'edit-' . (int)$edit['PostID'] : 'create') ?>" data-leave-to="<?= e($isEdit ? url('post', ['id' => $edit['PostID']]) : url('home')) ?>" data-max-bytes="<?= ImageUploader::fileLimitBytes() ?>" data-max-steps="<?= PostController::MAX_STEP_PHOTOS ?>" novalidate>
         <?= csrf_field() ?>
 
         <?php // The finished artwork is the cover photo. ?>

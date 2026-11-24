@@ -36,11 +36,24 @@ class PostController extends BaseController
             $this->notFound();
             return;
         }
+        // Only the matching successful save can tell this tab to skip its old form on Back.
+        $savedForm = null;
+        $savedToken = $_GET['saved'] ?? null;
+        $saved = $_SESSION['post_save_back'] ?? null;
+        if ($this->isOwner($post) && is_string($savedToken) && is_array($saved)
+            && isset($saved['token'], $saved['postId'], $saved['form'])
+            && is_string($saved['token']) && is_string($saved['form'])
+            && $saved['postId'] === (int)$post['PostID']
+            && hash_equals($saved['token'], $savedToken)) {
+            $savedForm = $saved['form'];
+            unset($_SESSION['post_save_back']);
+        }
         $this->render('post/show', [
             'title' => $post['PostTitle'],
             'post'  => $post,
             'mine'  => $this->isOwner($post),
             'canDelete' => $this->isOwner($post) || $this->isAdmin(),
+            'savedForm' => $savedForm,
         ]);
     }
 
@@ -289,6 +302,8 @@ class PostController extends BaseController
                     : ($post['ChallengeID'] ?? null),
             ];
 
+            // Make the one-use Back marker before saving, so a failure cannot happen after the database changed.
+            $saveToken = bin2hex(random_bytes(16));
             if ($post === null) {
                 $postId = $posts->create((int)$this->user['UserID'], $data, $v['categories'], $v['tags'], $images);
             } else {
@@ -306,7 +321,13 @@ class PostController extends BaseController
         }
 
         flash_set('success', $v['isDraft'] ? 'Draft saved. Only you can see it.' : 'Your post is live.');
-        redirect_to(url('post', ['id' => $postId]));
+        // The post page confirms this token before its JavaScript remembers which form was saved.
+        $_SESSION['post_save_back'] = [
+            'token'  => $saveToken,
+            'postId' => $postId,
+            'form'   => $post === null ? 'create' : 'edit-' . $postId,
+        ];
+        redirect_to(url('post', ['id' => $postId, 'saved' => $saveToken]));
         return $errors;                                // never reached: redirect_to() ends the script
     }
 

@@ -286,9 +286,44 @@ so every check that matters is repeated in PHP.
         }
     });
 
+    /* ---------- Back after saving a post ----------
+       The post page gets this marker only after PHP has saved successfully. sessionStorage belongs to this tab. */
+    var savedPostForm = $('[data-saved-post-form]');
+    if (savedPostForm) {
+        try {
+            sessionStorage.setItem('tbhSavedPostForm', savedPostForm.getAttribute('data-saved-post-form'));
+        } catch (err) {
+            console.warn('Back shortcut unavailable: this browser blocked session storage.');
+        }
+        // Remove the one-use marker from the address, so it is not included when the address is copied.
+        var cleanPostUrl = new URL(location.href);
+        cleanPostUrl.searchParams.delete('saved');
+        history.replaceState(history.state, '', cleanPostUrl.href);
+    }
+
     /* ---------- CREATE POST form ---------- */
     var pf = $('[data-post-form]');
     if (pf) {
+        // Skip this form on Back only when the post page confirmed that this form was saved.
+        var formKey = pf.getAttribute('data-form-key');
+        var leaveTo = pf.getAttribute('data-leave-to');
+        var navigation = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+        function leaveSavedForm(persisted) {
+            var cameBack = persisted || (navigation && navigation.type === 'back_forward');
+            try {
+                if (sessionStorage.getItem('tbhSavedPostForm') !== formKey) { return; }
+                sessionStorage.removeItem('tbhSavedPostForm');
+            } catch (err) {
+                console.warn('Back shortcut unavailable: this browser blocked session storage.');
+                return;
+            }
+            if (cameBack) { location.replace(leaveTo); }
+        }
+        leaveSavedForm(false);
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) { leaveSavedForm(true); }
+        });
+
         var maxBytes = parseInt(pf.getAttribute('data-max-bytes'), 10) || 5 * 1024 * 1024;
         var maxSteps = parseInt(pf.getAttribute('data-max-steps'), 10) || 6;
         var photo = $('[data-photo]', pf), pimg = $('[data-photo-preview]', pf), pempty = $('[data-photo-empty]', pf);

@@ -1,14 +1,15 @@
 <?php
 /*
 One post: the pictures on the left, everything about it on the right.
-Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin).
+Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin),
+       $savedForm (the form just saved, or null).
 Likes work (the heart). Comments, saving and reporting come in a later step.
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
 $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'], 'LastName' => $post['AuthorLastName']];
 ?>
-<section class="mx-auto max-w-[120rem] px-4 pb-16 pt-6 sm:px-16 md:px-24 lg:px-40">
+<section class="mx-auto max-w-[120rem] px-4 pb-16 pt-6 sm:px-16 md:px-24 lg:px-40"<?= $savedForm !== null ? ' data-saved-post-form="' . e($savedForm) . '"' : '' ?>>
     <a href="<?= e(url('home')) ?>" class="btn btn-ghost btn-sm mb-4 gap-1" data-back><?= icon('back', 16) ?> Back</a>
 
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
