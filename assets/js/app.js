@@ -264,6 +264,59 @@ so every check that matters is repeated in PHP.
         });
     }
 
+    /* ---------- Visitor hero: change pictures, with a way to stop the movement ----------
+       Play overrides the current hover and focus until each one leaves the card.
+       A new hover or focus then stops the pictures again. Reduced motion is always respected. */
+    var hero = $('[data-hero]');
+    if (hero) {
+        var slides = $$('[data-slide]', hero), shown = 0, paused = false;
+        var ignoreHover = false, ignoreFocus = false, heroTimer;
+        var pauseButton = $('[data-hero-pause]', hero);
+        var heroStep = parseInt(hero.getAttribute('data-interval'), 10) || 1500;
+        var lessMotion = function () {
+            return document.documentElement.classList.contains('reduce-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        };
+        var nextHeroSlide = function () {
+            slides[shown].classList.remove('is-active'); slides[shown].setAttribute('aria-hidden', 'true');
+            shown = (shown + 1) % slides.length;
+            slides[shown].classList.add('is-active'); slides[shown].removeAttribute('aria-hidden');
+        };
+        var startHeroTimer = function () {
+            // Restart the timer after Play, so two pictures cannot change almost at once.
+            clearInterval(heroTimer);
+            heroTimer = setInterval(function () {
+                if (paused || (hero.matches(':hover') && !ignoreHover)
+                    || (hero.contains(document.activeElement) && !ignoreFocus)
+                    || document.hidden || lessMotion()) { return; }
+                nextHeroSlide();
+            }, heroStep);
+        };
+        if (slides.length > 1) {
+            startHeroTimer();
+            hero.addEventListener('mouseleave', function () { ignoreHover = false; });
+            hero.addEventListener('focusout', function (event) {
+                if (!hero.contains(event.relatedTarget)) { ignoreFocus = false; }
+            });
+        }
+        if (pauseButton) {
+            pauseButton.hidden = false;
+            pauseButton.addEventListener('click', function () {
+                paused = !paused;
+                pauseButton.setAttribute('aria-pressed', paused ? 'true' : 'false');
+                pauseButton.setAttribute('aria-label', paused ? 'Play the pictures' : 'Pause the pictures');
+                $('[data-hero-pause-icon]', pauseButton).hidden = paused;
+                $('[data-hero-play-icon]', pauseButton).hidden = !paused;
+                if (!paused) {
+                    // This explicit Play choice applies to the hover and focus already on the card.
+                    ignoreHover = hero.matches(':hover');
+                    ignoreFocus = hero.contains(document.activeElement);
+                    if (!document.hidden && !lessMotion()) { nextHeroSlide(); }
+                    startHeroTimer();
+                }
+            });
+        }
+    }
+
     /* ---------- Back button (data-back): go back if there is somewhere to go back to ---------- */
     $$('[data-back]').forEach(function (a) {
         a.addEventListener('click', function (e) {

@@ -54,6 +54,8 @@ class HomeController extends BaseController
             'pg'      => $pg,
             'coolest' => $model->coolest($this->viewerId()),
             'maker'   => $model->makerOfTheWeek(),
+            // Only visitors need the five hottest posts for the hero pictures.
+            'pins'    => $visitor ? $model->hot(5) : [],
         ]);
     }
 }

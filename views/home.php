@@ -7,7 +7,8 @@ The front page. One address, three versions:
 Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week sits next to the greeting.
 Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
        $maker (the maker of the week, or null: then the card is left out),
-       $pg (the page number), $hasNext (is there a next page?) and $atPageLimit.
+       $pg (the page number), $hasNext (is there a next page?), $atPageLimit,
+       and $pins (up to five pictures for the visitor hero).
 */
 ?>
 <?php if ($user === null): ?>
@@ -27,18 +28,42 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
                 </div>
             </div>
 
-            <!-- A card "pinned up" with paper behind it and a piece of tape. Pictures from the community go here once posts exist. -->
-            <div class="relative mx-auto w-full max-w-sm lg:max-w-md" aria-hidden="true">
+            <?php // The visitor hero shows community pictures, or craft doodles when there are no posts. ?>
+            <div class="relative mx-auto w-full max-w-sm lg:max-w-md"<?= $pins ? '' : ' aria-hidden="true"' ?>>
                 <div class="absolute inset-0 rotate-[5deg] rounded-sm border border-base-300 bg-base-100 shadow-md"></div>
                 <div class="absolute inset-0 -rotate-[4deg] rounded-sm border border-base-300 bg-base-300"></div>
-                <div class="relative aspect-[10/13] rotate-[1.5deg] rounded-sm border border-base-300 bg-base-100 p-3 shadow-xl">
-                    <div class="relative flex h-full flex-col items-center justify-center gap-6 bg-base-200">
-                        <div class="flex items-center gap-6 text-accent"><?= craft_icon('brush', 96) ?><?= craft_icon('scissors', 90) ?></div>
-                        <div class="flex items-center gap-6 text-primary"><?= craft_icon('yarn', 100) ?><?= craft_icon('pencil', 90) ?></div>
-                        <p class="font-hand text-4xl text-accent">Your work could be next.</p>
+                <?php if ($pins): ?>
+                    <?php // The slides share one grid cell, so the tallest caption gives the card enough room. ?>
+                    <div class="relative grid rotate-[1.5deg] rounded-sm border border-base-300 bg-base-100 p-3 shadow-xl" data-hero data-interval="1500" role="group" aria-label="Pictures from the community">
+                        <?php foreach ($pins as $i => $pin): ?>
+                            <figure class="tbh-hero-slide col-start-1 row-start-1 flex flex-col <?= $i === 0 ? 'is-active' : '' ?>" data-slide<?= $i === 0 ? '' : ' aria-hidden="true"' ?>>
+                                <div class="relative aspect-[10/11] w-full flex-1 overflow-hidden bg-base-300">
+                                    <img src="<?= e(ImageUploader::url($pin['CoverFile'], true)) ?>" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-2xl">
+                                    <img src="<?= e(ImageUploader::url($pin['CoverFile'], true)) ?>" alt="<?= e($pin['AltText'] ?? $pin['PostTitle']) ?>" class="relative h-full w-full object-contain">
+                                </div>
+                                <?php // Long titles and usernames can wrap without being cut off. ?>
+                                <figcaption class="flex shrink-0 flex-col justify-end pt-2">
+                                    <span class="wrap-anywhere font-display text-lg font-semibold leading-tight"><?= e($pin['PostTitle']) ?></span>
+                                    <span class="wrap-anywhere font-hand text-2xl leading-none text-accent">by <?= e($pin['AuthorUsername']) ?></span>
+                                </figcaption>
+                            </figure>
+                        <?php endforeach; ?>
+                        <?php if (count($pins) > 1): ?>
+                            <?php // Only JavaScript can pause the pictures, so it shows the button after loading. ?>
+                            <button type="button" class="btn btn-circle btn-sm absolute right-5 top-5 border-0 bg-base-100/90 text-base-content shadow" data-hero-pause aria-pressed="false" aria-label="Pause the pictures" hidden><span data-hero-pause-icon><?= icon('pause', 16) ?></span><span data-hero-play-icon hidden><?= icon('play', 16) ?></span></button>
+                        <?php endif; ?>
+                        <span class="absolute -top-4 left-1/2 h-7 w-28 -translate-x-1/2 -rotate-3 bg-[#e6cf9f]/90 shadow-sm" aria-hidden="true"></span>
                     </div>
-                    <span class="absolute -top-4 left-1/2 h-7 w-28 -translate-x-1/2 -rotate-3 bg-[#e6cf9f]/90 shadow-sm"></span>
-                </div>
+                <?php else: ?>
+                    <div class="relative aspect-[10/13] rotate-[1.5deg] rounded-sm border border-base-300 bg-base-100 p-3 shadow-xl">
+                        <div class="relative flex h-full flex-col items-center justify-center gap-6 bg-base-200">
+                            <div class="flex items-center gap-6 text-accent"><?= craft_icon('brush', 96) ?><?= craft_icon('scissors', 90) ?></div>
+                            <div class="flex items-center gap-6 text-primary"><?= craft_icon('yarn', 100) ?><?= craft_icon('pencil', 90) ?></div>
+                            <p class="font-hand text-4xl text-accent">Your work could be next.</p>
+                        </div>
+                        <span class="absolute -top-4 left-1/2 h-7 w-28 -translate-x-1/2 -rotate-3 bg-[#e6cf9f]/90 shadow-sm"></span>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </section>
