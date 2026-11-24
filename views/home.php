@@ -61,13 +61,21 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest').
     <h2 id="feed-h" class="sr-only">The feed</h2>
 
     <?php // These tabs are LINKS (each one loads the page again with ?tab=...), so they are a <nav> and not role="tablist". ?>
-    <nav class="tabs tabs-border" aria-label="Feed">
-        <a class="tab text-base font-bold <?= $tab === 'hot' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>"<?= $tab === 'hot' ? ' aria-current="page"' : '' ?>>Hot feed</a>
-        <a class="tab text-base font-bold <?= $tab === 'newest' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'newest']) . '#feed') ?>"<?= $tab === 'newest' ? ' aria-current="page"' : '' ?>>Newest</a>
-    </nav>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <nav class="tabs tabs-border" aria-label="Feed">
+            <a class="tab text-base font-bold <?= $tab === 'hot' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>"<?= $tab === 'hot' ? ' aria-current="page"' : '' ?>>Hot feed</a>
+            <a class="tab text-base font-bold <?= $tab === 'newest' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'newest']) . '#feed') ?>"<?= $tab === 'newest' ? ' aria-current="page"' : '' ?>>Newest</a>
+        </nav>
+
+        <?php // Grid / Single only works with JavaScript, so the buttons start hidden and app.js shows them. ?>
+        <div class="join hidden" role="group" aria-label="View" data-view-group>
+            <button type="button" class="btn btn-sm join-item btn-neutral" data-view="grid" aria-pressed="true"><?= icon('grid', 16) ?> Grid</button>
+            <button type="button" class="btn btn-sm join-item" data-view="single" aria-pressed="false"><?= icon('single', 16) ?> Single</button>
+        </div>
+    </div>
 
     <?php if ($posts): ?>
-        <div class="mt-6 columns-1 gap-8 sm:columns-2 lg:columns-3">
+        <div class="tbh-feed mt-6 columns-1 gap-8 sm:columns-2 lg:columns-3">
             <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
         </div>
         <?php if ($user === null): ?>

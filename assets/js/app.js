@@ -237,6 +237,33 @@ so every check that matters is repeated in PHP.
         });
     });
 
+    /* ---------- Grid / Single view on the front page ----------
+       "single" puts a class on <html>; the CSS (.view-single .tbh-feed) then makes the feed one wide column.
+       The choice is only a convenience, so it is kept in this browser (localStorage), and the page works without it. */
+    var viewGroup = $('[data-view-group]');
+    if (viewGroup) {
+        var viewButtons = $$('[data-view]', viewGroup);
+        var setView = function (view) {
+            document.documentElement.classList.toggle('view-single', view === 'single');
+            viewButtons.forEach(function (button) {
+                var on = button.getAttribute('data-view') === view;
+                button.setAttribute('aria-pressed', on ? 'true' : 'false');
+                button.classList.toggle('btn-neutral', on);
+            });
+        };
+        var savedView = 'grid';
+        try { savedView = localStorage.getItem('tbh-view') === 'single' ? 'single' : 'grid'; } catch (err) { /* storage blocked: start with the grid */ }
+        setView(savedView);
+        viewGroup.classList.remove('hidden');
+        viewButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                var view = button.getAttribute('data-view');
+                setView(view);
+                try { localStorage.setItem('tbh-view', view); } catch (err) { /* ignore */ }
+            });
+        });
+    }
+
     /* ---------- Back button (data-back): go back if there is somewhere to go back to ---------- */
     $$('[data-back]').forEach(function (a) {
         a.addEventListener('click', function (e) {

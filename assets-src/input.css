@@ -116,6 +116,8 @@
 
 /* a few small custom pieces daisyUI does not have */
 @layer components {
+  /* Grid / Single switch on the front page: "single" = one wide column. !important because the columns-* classes of the feed come later in the CSS. */
+  .view-single .tbh-feed { columns: 1 !important; max-width: 40rem; margin-inline: auto; }
   .tbh-card { background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: var(--radius-box); }
   /* the heart: filled in the main colour when the member liked the post (the same attribute is read by screen readers) */
   .tbh-like[aria-pressed="true"] svg { fill: currentColor; color: var(--color-primary); }
