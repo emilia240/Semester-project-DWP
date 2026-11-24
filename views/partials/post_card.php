@@ -29,7 +29,8 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
     </header>
 
     <?php if ($p['PostDescription'] !== null && $p['PostDescription'] !== ''): ?>
-        <p class="line-clamp-4 pb-3 leading-relaxed"><?= format_text($p['PostDescription']) ?></p>
+        <?php // Wrap long words and links before limiting the story to four lines. ?>
+        <p class="line-clamp-4 wrap-anywhere pb-3 leading-relaxed"><?= format_text($p['PostDescription']) ?></p>
     <?php endif; ?>
 
     <?php // Use the small image so a feed with many posts loads faster. ?>
@@ -37,10 +38,12 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
         <img src="<?= e(ImageUploader::url($p['CoverFile'], true)) ?>" <?= image_attrs($p['CoverFile'], true) ?> alt="<?= e($p['AltText'] ?? $p['PostTitle']) ?>" loading="lazy" class="mx-auto h-auto max-h-[30rem] w-full object-contain">
     </a>
 
-    <h3 class="mt-3 font-display text-xl font-semibold leading-snug"><a href="<?= $link ?>" class="hover:underline"><?= e($p['PostTitle']) ?></a></h3>
+    <?php // Long titles can wrap inside the card rather than spilling into another column. ?>
+    <h3 class="mt-3 wrap-anywhere font-display text-xl font-semibold leading-snug"><a href="<?= $link ?>" class="hover:underline"><?= e($p['PostTitle']) ?></a></h3>
 
     <?php if ($tags): ?>
-        <p class="mt-1 flex flex-wrap gap-2 text-sm"><?php foreach ($tags as $t): ?><span class="font-bold text-primary">#<?= e($t) ?></span><?php endforeach; ?></p>
+        <?php // A long tag can wrap instead of reaching into the next card. ?>
+        <p class="mt-1 flex flex-wrap gap-2 text-sm"><?php foreach ($tags as $t): ?><span class="min-w-0 max-w-full wrap-anywhere font-bold text-primary">#<?= e($t) ?></span><?php endforeach; ?></p>
     <?php endif; ?>
 
     <?php // A draft has no heart (it is not public), so no footer either. ?>

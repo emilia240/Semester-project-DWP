@@ -37,13 +37,15 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
                 <?php foreach ($post['categories'] as $c): ?><span class="badge badge-lg bg-base-300 border-0 font-bold"><?= e($c['CategoryName']) ?></span><?php endforeach; ?>
             </div>
 
-            <h1 class="mt-4 text-4xl font-semibold leading-tight sm:text-5xl"><?= e($post['PostTitle']) ?></h1>
+            <?php // Let long words wrap instead of stretching the page sideways. ?>
+            <h1 class="mt-4 wrap-anywhere text-4xl font-semibold leading-tight sm:text-5xl"><?= e($post['PostTitle']) ?></h1>
 
             <div class="mt-5 flex flex-wrap items-center gap-3">
                 <?= avatar($author, 56) ?>
                 <div class="min-w-0 flex-1">
-                    <p class="font-bold"><?= e($post['AuthorFirstName'] . ' ' . $post['AuthorLastName']) ?></p>
-                    <p class="text-sm opacity-80">@<?= e($post['AuthorUsername']) ?></p>
+                    <?php // Long names must fit beside the avatar and action buttons. ?>
+                    <p class="wrap-anywhere font-bold"><?= e($post['AuthorFirstName'] . ' ' . $post['AuthorLastName']) ?></p>
+                    <p class="wrap-anywhere text-sm opacity-80">@<?= e($post['AuthorUsername']) ?></p>
                 </div>
                 <?php if ($mine): ?>
                     <a href="<?= e(url('edit', ['id' => $post['PostID']])) ?>" class="btn rounded-full"><?= icon('pencil', 16) ?> Edit</a>
@@ -54,11 +56,13 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
             </div>
 
             <?php if ($post['PostDescription'] !== null && $post['PostDescription'] !== ''): ?>
-                <p class="mt-6 text-lg leading-relaxed"><?= format_text($post['PostDescription']) ?></p>
+                <?php // Long words and links should wrap instead of stretching the page. ?>
+                <p class="mt-6 wrap-anywhere text-lg leading-relaxed"><?= format_text($post['PostDescription']) ?></p>
             <?php endif; ?>
 
             <?php if ($post['tags']): ?>
-                <p class="mt-4 flex flex-wrap gap-2"><?php foreach ($post['tags'] as $t): ?><span class="font-bold text-primary">#<?= e($t) ?></span><?php endforeach; ?></p>
+                <?php // Each tag may also wrap inside the available width. ?>
+                <p class="mt-4 flex flex-wrap gap-2"><?php foreach ($post['tags'] as $t): ?><span class="min-w-0 max-w-full wrap-anywhere font-bold text-primary">#<?= e($t) ?></span><?php endforeach; ?></p>
             <?php endif; ?>
 
             <p class="mt-4 text-sm opacity-80"><?= e(when($post['UploadedAt'])) ?></p>

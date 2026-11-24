@@ -8,7 +8,8 @@ Needs: $maker = the row from PostModel::makerOfTheWeek().
 $href = e(url('post', ['id' => $maker['PostID']]));
 $file = ImageUploader::url($maker['CoverFile']);
 ?>
-<aside class="relative mx-auto w-full max-w-2xl pt-6" aria-label="Maker of the week">
+<?php // Leave a little room for the tilted card when a long title makes it taller. ?>
+<aside class="relative mx-auto w-full max-w-2xl px-1 pt-6" aria-label="Maker of the week">
     <span class="pointer-events-none absolute left-0 top-16 text-secondary opacity-60" aria-hidden="true"><?= craft_icon('star', 28, 'rotate-[-14deg]') ?></span>
     <span class="pointer-events-none absolute bottom-10 right-0 text-primary opacity-60" aria-hidden="true"><?= craft_icon('star', 22, 'rotate-[16deg]') ?></span>
 
@@ -35,12 +36,14 @@ $file = ImageUploader::url($maker['CoverFile']);
                 <div class="mt-5 flex flex-col items-center gap-3 sm:items-start">
                     <?= avatar($maker, 64) ?>
                     <div class="min-w-0">
-                        <p class="font-display text-2xl font-semibold leading-tight sm:text-3xl"><?= e($maker['FirstName'] . ' ' . $maker['LastName']) ?></p>
-                        <p class="text-sm opacity-80">@<?= e($maker['Username']) ?></p>
+                        <?php // Wrap long names so they stay inside the card. ?>
+                        <p class="wrap-anywhere font-display text-2xl font-semibold leading-tight sm:text-3xl"><?= e($maker['FirstName'] . ' ' . $maker['LastName']) ?></p>
+                        <p class="wrap-anywhere text-sm opacity-80">@<?= e($maker['Username']) ?></p>
                         <?php if (!empty($maker['Tagline'])): ?><p class="mt-2"><span class="badge badge-sm border-0 bg-base-300 font-semibold text-base-content"><?= e($maker['Tagline']) ?></span></p><?php endif; ?>
                     </div>
                 </div>
-                <a href="<?= $href ?>" class="mt-5 inline-flex items-center gap-1 font-bold underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"><?= e($maker['PostTitle']) ?> <?= icon('arrow', 16) ?></a>
+                <?php // The title can shrink and wrap without pushing the arrow or the card sideways. ?>
+                <a href="<?= $href ?>" class="mt-5 inline-flex max-w-full items-center gap-1 font-bold underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"><span class="min-w-0 wrap-anywhere"><?= e($maker['PostTitle']) ?></span> <?= icon('arrow', 16) ?></a>
             </div>
         </div>
     </div>

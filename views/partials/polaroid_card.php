@@ -12,6 +12,8 @@ $tapes = ['bg-accent/40', 'bg-secondary/40', 'bg-primary/35', 'bg-info/35'];
     <span class="block overflow-hidden rounded-sm bg-base-300">
         <img src="<?= e(ImageUploader::url($p['CoverFile'], true)) ?>" <?= image_attrs($p['CoverFile'], true) ?> alt="<?= e($p['AltText'] ?? $p['PostTitle']) ?>" loading="lazy" class="mx-auto h-auto max-h-[40rem] w-full object-contain">
     </span>
-    <span class="mt-2 block line-clamp-2 px-1 font-hand text-xl leading-tight group-hover:underline"><?= e($p['PostTitle']) ?></span>
-    <span class="block px-1 text-sm opacity-80">by <?= e($p['AuthorUsername']) ?></span>
+    <?php // Wrap long words so the full title stays inside the small card. ?>
+    <span class="mt-2 block wrap-anywhere px-1 font-hand text-xl leading-tight group-hover:underline"><?= e($p['PostTitle']) ?></span>
+    <?php // A long username should stay inside the polaroid too. ?>
+    <span class="block wrap-anywhere px-1 text-sm opacity-80">by <?= e($p['AuthorUsername']) ?></span>
 </a>
