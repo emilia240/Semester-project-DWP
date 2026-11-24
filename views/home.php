@@ -4,7 +4,8 @@ The front page. One address, three versions:
   visitor ($user is null)      big "To be Human" + intro + join buttons
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
-Under the top part: the newest posts. "Coolest this week" and the maker of the week come later.
+Under the top part: the feed with the tabs "Hot feed" and "Newest". "Coolest this week" and the maker of the week come later.
+Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest').
 */
 ?>
 <?php if ($user === null): ?>
@@ -55,9 +56,16 @@ Under the top part: the newest posts. "Coolest this week" and the maker of the w
     </section>
 <?php endif; ?>
 
-<?php /* the newest posts: a few for visitors (with a Join prompt), more for members */ ?>
-<section class="mx-auto max-w-[120rem] px-4 pb-16 sm:px-16 md:px-24 lg:px-40" aria-labelledby="fresh-h">
-    <h2 id="fresh-h" class="font-display text-3xl font-semibold"><?= $user === null ? 'Fresh from the community' : 'Newest posts' ?></h2>
+<?php /* the feed: tabs, then the posts. A few for visitors (with a Join prompt), more for members. */ ?>
+<section class="mx-auto max-w-[120rem] px-4 pb-16 sm:px-16 md:px-24 lg:px-40" id="feed" aria-labelledby="feed-h">
+    <h2 id="feed-h" class="sr-only">The feed</h2>
+
+    <?php // These tabs are LINKS (each one loads the page again with ?tab=...), so they are a <nav> and not role="tablist". ?>
+    <nav class="tabs tabs-border" aria-label="Feed">
+        <a class="tab text-base font-bold <?= $tab === 'hot' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>"<?= $tab === 'hot' ? ' aria-current="page"' : '' ?>>Hot feed</a>
+        <a class="tab text-base font-bold <?= $tab === 'newest' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'newest']) . '#feed') ?>"<?= $tab === 'newest' ? ' aria-current="page"' : '' ?>>Newest</a>
+    </nav>
+
     <?php if ($posts): ?>
         <div class="mt-6 columns-1 gap-8 sm:columns-2 lg:columns-3">
             <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
@@ -70,7 +78,7 @@ Under the top part: the newest posts. "Coolest this week" and the maker of the w
             </div>
         <?php endif; ?>
     <?php else: ?>
-        <p class="mt-4 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
+        <p class="mt-6 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
         <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
     <?php endif; ?>
 </section>

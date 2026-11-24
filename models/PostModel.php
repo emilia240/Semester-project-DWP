@@ -63,10 +63,28 @@ class PostModel
         return $post;
     }
 
-    // The newest PUBLISHED posts (drafts are never in this list), one row per post with its cover picture.
+    // The front page hides drafts and active bans. An expired temporary ban no longer hides the posts.
+    private const FEED_WHERE = 'WHERE p.IsDraft = 0 AND (u.IsBanned = 0 OR u.BannedUntil <= NOW())';
+
+    // The newest published posts, one row per post with its cover picture.
     public function latest(int $limit, int $offset = 0, int $viewerId = 0): array
     {
-        return $this->cards('WHERE p.IsDraft = 0', [], $limit, $offset, $viewerId);
+        return $this->cards(self::FEED_WHERE, [], $limit, $offset, $viewerId);
+    }
+
+    /*
+    The hot feed puts posts with the most likes and comments from the last 3 days first.
+    A SQL view is a saved query. hot_posts supplies the score without storing it again.
+    LEFT JOIN keeps posts missing from the view; COALESCE gives those posts a score of zero.
+    The view uses idx_postlike_post_liked and idx_comment_post_created for recent activity.
+    */
+    public function hot(int $limit, int $offset = 0, int $viewerId = 0): array
+    {
+        return $this->cards(
+            self::FEED_WHERE, [], $limit, $offset, $viewerId,
+            'LEFT JOIN `hot_posts` h ON h.PostID = p.PostID',
+            'COALESCE(h.HotScore, 0) DESC, p.UploadedAt DESC, p.PostID DESC'
+        );
     }
 
     // Count this member's new posts, including drafts, for the posting limit.
@@ -94,7 +112,9 @@ class PostModel
     // PostTag's primary key finds the tags for each post; Tag's primary key finds each tag name.
     // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting
     // ATTR_EMULATE_PREPARES = false does not allow the same :name twice in one query.
-    private function cards(string $where, array $params, int $limit, int $offset, int $viewerId = 0): array
+    // $join and $order are only ever text written in THIS file (never user input), so they are safe to put in the SQL.
+    private function cards(string $where, array $params, int $limit, int $offset, int $viewerId = 0,
+                           string $join = '', string $order = 'p.UploadedAt DESC, p.PostID DESC'): array
     {
         $stmt = $this->db->prepare(
             "SELECT p.PostID, p.UserID, p.PostTitle, p.PostDescription, p.AltText, p.UploadedAt, p.IsDraft,
@@ -112,8 +132,9 @@ class PostModel
                FROM `Post` p
                JOIN `User` u ON u.UserID = p.UserID
                JOIN `PostImage` i ON i.PostID = p.PostID AND i.Position = 1
+               $join
                $where
-              ORDER BY p.UploadedAt DESC, p.PostID DESC
+              ORDER BY $order
               LIMIT :limit OFFSET :offset"
         );
         foreach ($params as $name => $value) {
