@@ -57,7 +57,7 @@ class HomeController extends BaseController
             'coolest' => $model->coolest($this->viewerId()),
             'maker'   => $maker,
             // The newest comments under the maker's post fade in and out on the maker card.
-            'makerComments' => $maker !== null ? $model->latestComments((int)$maker['PostID'], 4) : [],
+            'makerComments' => $maker !== null ? (new CommentModel($this->db))->latestForPost((int)$maker['PostID'], 4) : [],
             // Only visitors need the five hottest posts for the hero pictures.
             'pins'    => $visitor ? $model->hot(5) : [],
         ]);

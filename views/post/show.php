@@ -3,7 +3,8 @@
 One post: the pictures on the left, everything about it on the right.
 Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin),
        $savedForm (the form just saved, or null).
-Likes work (the heart). Comments, saving and reporting come in a later step.
+Likes work (the heart) and the comments can be read. Writing, saving and reporting come in later steps.
+Also needs: $comments (the comments with their replies), $commentTotal (how many comments and replies are shown).
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
@@ -69,8 +70,31 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
 
             <div class="mt-6 flex items-center gap-1 border-y border-base-300 py-3">
                 <?php partial('like_button', ['p' => $post, 'back' => 'post']); ?>
+                <?php if (!$post['IsDraft']): ?><a href="#comments" class="btn btn-ghost btn-sm gap-1" aria-label="<?= (int)$commentTotal ?> comments"><?= icon('comment', 18) ?> <?= (int)$commentTotal ?></a><?php endif; ?>
                 <button type="button" class="btn btn-ghost btn-sm gap-1" data-copy="<?= e(url('post', ['id' => $post['PostID']])) ?>"><?= icon('link', 18) ?> Copy link</button>
             </div>
+
+            <?php if (!$post['IsDraft']): ?>
+                <section id="comments" class="mt-8 scroll-mt-24" aria-labelledby="comments-h">
+                    <h2 id="comments-h" class="text-2xl font-semibold">Comments <span class="opacity-80">(<?= (int)$commentTotal ?>)</span></h2>
+
+                    <?php if ($user === null): ?>
+                        <div class="tbh-card mt-4 p-5 text-center">
+                            <p class="font-bold">Want to ask about the technique?</p>
+                            <p class="text-sm opacity-80">Only members can write comments. Everyone can read them.</p>
+                            <div class="mt-3 flex justify-center gap-2"><a href="<?= e(url('join')) ?>" class="btn btn-primary btn-sm rounded-full">Join us</a><a href="<?= e(url('login', ['back' => $post['PostID']])) ?>" class="btn btn-sm rounded-full">Log in</a></div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!$comments): ?>
+                        <p class="mt-4 opacity-80">No comments yet.</p>
+                    <?php else: ?>
+                        <ul class="mt-2 divide-y divide-base-300">
+                            <?php foreach ($comments as $c) { partial('comment', ['c' => $c]); } ?>
+                        </ul>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
         </div>
     </div>
 

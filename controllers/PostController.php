@@ -48,9 +48,13 @@ class PostController extends BaseController
             $savedForm = $saved['form'];
             unset($_SESSION['post_save_back']);
         }
+        // The comments of a published post, as a tree (a draft has none).
+        $thread = $post['IsDraft'] ? ['comments' => [], 'total' => 0] : (new CommentModel($this->db))->forPost((int)$post['PostID']);
         $this->render('post/show', [
             'title' => $post['PostTitle'],
             'post'  => $post,
+            'comments'     => $thread['comments'],
+            'commentTotal' => $thread['total'],
             'mine'  => $this->isOwner($post),
             'canDelete' => $this->isOwner($post) || $this->isAdmin(),
             'savedForm' => $savedForm,
