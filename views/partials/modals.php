@@ -1,8 +1,9 @@
 <?php
 /*
-The three little windows (dialogs) that any page can open. They are filled in by assets/js/app.js:
+The little windows (dialogs) that any page can open. They are filled in by assets/js/app.js:
   data-confirm="Title" data-confirm-text="..." data-confirm-form="formId"   -> "Are you sure?" (then it sends that form)
   a link with data-ext                                                        -> "Do you trust this link?"
+  a link with data-report="commentId"                                         -> "Report this comment"
 */
 ?>
 <dialog id="modal-ext" class="modal">
@@ -17,6 +18,29 @@ The three little windows (dialogs) that any page can open. They are filled in by
     </div>
     <form method="dialog" class="modal-backdrop"><button aria-label="Close">close</button></form>
 </dialog>
+
+<?php // The report dialog posts to the same controller as the fallback page. ?>
+<?php if (logged_in()): ?>
+<dialog id="modal-report" class="modal">
+    <div class="modal-box">
+        <h3 class="text-xl font-semibold">Report this comment</h3>
+        <p class="pt-2 text-sm opacity-80">Thank you for looking out for the community. A moderator will take a look.</p>
+        <form method="post" action="<?= e(url('report-comment')) ?>" class="mt-4 space-y-3">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id" value="" id="report-id">
+            <?php foreach (ReportController::REASONS as $key => $label): ?>
+                <label class="flex items-center gap-3"><input type="radio" name="reason" value="<?= e($key) ?>" class="radio radio-primary radio-sm" required> <?= e($label) ?></label>
+            <?php endforeach; ?>
+            <textarea class="textarea w-full" rows="2" name="details" maxlength="<?= ReportController::MAX_DETAILS ?>" aria-label="Anything we should know? Needed for Something else." placeholder="Anything we should know? (needed for “Something else”)"></textarea>
+            <div class="modal-action">
+                <button type="button" class="btn rounded-full" data-close>Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-full">Send report</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="Close">close</button></form>
+</dialog>
+<?php endif; ?>
 
 <?php // Shown to a visitor who clicks a heart. assets/js/app.js opens it and gives "Log in" the right back= address. ?>
 <dialog id="modal-join" class="modal">

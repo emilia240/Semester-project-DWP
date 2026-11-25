@@ -43,6 +43,7 @@ $routes = [
     'add-comment' => ['CommentController', 'add', 'member'],                  // POST only
     'confirm-delete-comment' => ['CommentController', 'confirmDelete', 'member'],
     'delete-comment' => ['CommentController', 'delete', 'member'],            // POST only
+    'report-comment' => ['ReportController', 'comment', 'member'],            // GET shows the form, POST saves it
     'admin'       => ['AdminController', 'index', 'admin'],
 ];
 

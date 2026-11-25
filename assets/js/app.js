@@ -169,6 +169,21 @@ so every check that matters is repeated in PHP.
     }
 
 
+    /* ---------- Report a comment ----------
+       JavaScript opens the dialog; without it the same link opens the report page. */
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-report]');
+        if (!b) { return; }
+        var dialog = $('#modal-report');
+        if (!dialog || typeof dialog.showModal !== 'function') { return; }
+        e.preventDefault();
+        var form = $('form', dialog);
+        form.reset();
+        $('#report-id').value = b.getAttribute('data-report');
+        if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); }
+        dialog.showModal();
+    });
+
     /* ---------- the heart for members: send the form without reloading ----------
        The normal form still works without JavaScript. While waiting, prevent a double click. */
     document.addEventListener('submit', function (e) {

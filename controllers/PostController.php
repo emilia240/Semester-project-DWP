@@ -68,6 +68,13 @@ class PostController extends BaseController
             $replyTo = (int)($old['parent'] ?? 0) > 0 ? $replyTo : 0;
             unset($_SESSION['comment_old']);
         }
+        // Show report feedback once, only beside the comments on the matching post.
+        $reportNotice = null;
+        $notice = $_SESSION['report_notice'] ?? null;
+        if (is_array($notice) && ($notice['postId'] ?? null) === (int)$post['PostID'] && !$post['IsDraft']) {
+            $reportNotice = $notice;
+            unset($_SESSION['report_notice']);
+        }
         $this->render('post/show', [
             'title' => $post['PostTitle'],
             'post'  => $post,
@@ -75,6 +82,7 @@ class PostController extends BaseController
             'commentTotal' => $thread['total'],
             'replyTo'      => $replyTo,
             'oldComment'   => $oldComment,
+            'reportNotice' => $reportNotice,
             'mine'  => $this->isOwner($post),
             'canDelete' => $this->isOwner($post) || $this->isAdmin(),
             'savedForm' => $savedForm,

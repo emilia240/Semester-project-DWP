@@ -28,6 +28,10 @@ $canDelete = $loggedIn && ($viewerId === (int)$c['UserID'] || $viewerId === (int
                     <?php if (!$isReply): ?>
                         <a href="<?= e(url('post', ['id' => $postId, 'reply' => $cid]) . '#reply-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('reply', 14) ?> Reply</a>
                     <?php endif; ?>
+                    <?php if ($viewerId !== (int)$c['UserID']): ?>
+                        <?php // The normal link opens a page; JavaScript opens the same form in a dialog. ?>
+                        <a href="<?= e(url('report-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1" data-report="<?= $cid ?>" aria-label="Report this comment"><?= icon('flag', 14) ?> Report</a>
+                    <?php endif; ?>
                     <?php if ($canDelete): ?>
                         <?php // The normal link is a fallback; JavaScript opens the confirmation dialog instead. ?>
                         <a href="<?= e(url('confirm-delete-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1 text-error" data-confirm="Delete this comment?" data-confirm-text="Any replies will be removed too. This cannot be undone." data-confirm-form="delete-comment-<?= $cid ?>"><?= icon('trash', 14) ?> Delete</a>

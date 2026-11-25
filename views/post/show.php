@@ -4,7 +4,7 @@ One post: the pictures on the left, everything about it on the right.
 Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin),
        $savedForm (the form just saved, or null).
 Likes and comments work. Saving and reporting come in later steps.
-Also needs: $comments, $commentTotal (how many are shown), $replyTo and $oldComment (text to refill after a mistake).
+Also needs: $comments, $commentTotal, $replyTo, $oldComment, and $reportNotice (feedback shown once).
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
@@ -86,6 +86,14 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
             <?php if (!$post['IsDraft']): ?>
                 <section id="comments" class="mt-8 scroll-mt-24" aria-labelledby="comments-h">
                     <h2 id="comments-h" class="text-2xl font-semibold">Comments <span class="opacity-80">(<?= (int)$commentTotal ?>)</span></h2>
+
+                    <?php // Report feedback belongs here, where the redirect brings the member. ?>
+                    <?php if ($reportNotice !== null): ?>
+                        <?php $noticeClass = ['success' => 'alert-success', 'error' => 'alert-error', 'info' => 'alert-info'][$reportNotice['type']] ?? 'alert-info'; ?>
+                        <div class="alert <?= e($noticeClass) ?> mt-4" role="<?= $reportNotice['type'] === 'error' ? 'alert' : 'status' ?>">
+                            <span><?= e($reportNotice['message']) ?></span>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if ($user === null): ?>
                         <div class="tbh-card mt-4 p-5 text-center">
