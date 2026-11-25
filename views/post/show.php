@@ -20,7 +20,8 @@ $commentCtx = [
 $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'], 'LastName' => $post['AuthorLastName']];
 ?>
 <section class="mx-auto max-w-[120rem] px-4 pb-16 pt-6 sm:px-16 md:px-24 lg:px-40"<?= $savedForm !== null ? ' data-saved-post-form="' . e($savedForm) . '"' : '' ?>>
-    <a href="<?= e(url('home')) ?>" class="btn btn-ghost btn-sm mb-4 gap-1" data-back><?= icon('back', 16) ?> Back</a>
+    <?php // Go straight to the feed, even after several comment or report pages. ?>
+    <a href="<?= e(url('home')) ?>" class="btn btn-ghost btn-sm mb-4 gap-1"><?= icon('back', 16) ?> Back</a>
 
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <?php // Show the cover photo and the optional step photos. ?>

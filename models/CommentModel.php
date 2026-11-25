@@ -138,21 +138,17 @@ class CommentModel
     }
 
     /*
-    The maker card shows the newest comments on one post.
-    The parent and author primary keys find a reply's parent and its author.
-    A reply is hidden when its parent is hidden, just like on the post page.
+    The maker card shows the newest normal comments on one post, not replies.
+    idx_comment_post_created helps find the post's comments in order.
     */
-    public function latestForPost(int $postId, int $limit = 4): array
+    public function latestForPost(int $postId, int $limit = 6): array
     {
         $stmt = $this->db->prepare(
-            'SELECT c.CommentID, c.CommentText, c.CreatedAt, u.UserID, u.Username, u.FirstName, u.LastName
+            'SELECT c.CommentText
                FROM `Comment` c
                JOIN `User` u ON u.UserID = c.UserID
-               LEFT JOIN `Comment` parent ON parent.CommentID = c.ParentCommentID
-               LEFT JOIN `User` parentAuthor ON parentAuthor.UserID = parent.UserID
               WHERE c.PostID = :post AND ' . self::AUTHOR_OK . '
-                AND (c.ParentCommentID IS NULL OR
-                     (parentAuthor.IsBanned = 0 OR parentAuthor.BannedUntil <= NOW()))
+                AND c.ParentCommentID IS NULL
               ORDER BY c.CreatedAt DESC, c.CommentID DESC
               LIMIT :limit'
         );

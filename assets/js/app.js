@@ -380,14 +380,6 @@ so every check that matters is repeated in PHP.
         }
     });
 
-    /* ---------- Back button (data-back): go back if there is somewhere to go back to ---------- */
-    $$('[data-back]').forEach(function (a) {
-        a.addEventListener('click', function (e) {
-            if (history.length > 1 && document.referrer.indexOf(location.host) !== -1) { e.preventDefault(); history.back(); }
-        });
-    });
-
-
     /* ---------- post page: click a step photo to show it large ---------- */
     $$('[data-thumb]').forEach(function (t) {
         t.addEventListener('click', function () {

@@ -42,10 +42,10 @@ $comments = $comments ?? [];
                     <div class="relative mt-4 rounded-2xl bg-base-200 px-4 py-3 text-left" data-comments data-interval="5000" role="group" aria-label="Latest comments on this post">
                         <div class="grid">
                             <?php foreach ($comments as $i => $c): ?>
-                                <?php // Bold and italic work, links do not (nobody should tab into a hidden comment). ?>
+                                <?php // Long comments are trimmed to three lines; the full text is on the post. ?>
                                 <blockquote class="tbh-fade col-start-1 row-start-1 min-w-0 pr-7 <?= $i === 0 ? 'is-active' : '' ?>" data-comment<?= $i === 0 ? '' : ' aria-hidden="true"' ?>>
+                                    <?php // Bold and italic work, but links are plain text so hidden comments cannot receive focus. ?>
                                     <p class="line-clamp-3 wrap-anywhere text-sm leading-snug"><?= preg_replace('~<a\b[^>]*>(.*?)</a>~s', '$1', format_text($c['CommentText'])) ?></p>
-                                    <footer class="wrap-anywhere mt-1 text-xs font-semibold opacity-80">@<?= e($c['Username']) ?> · <?= e(when($c['CreatedAt'])) ?></footer>
                                 </blockquote>
                             <?php endforeach; ?>
                         </div>
