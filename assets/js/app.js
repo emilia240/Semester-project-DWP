@@ -169,6 +169,18 @@ so every check that matters is repeated in PHP.
     }
 
 
+    /* ---------- Reply box ----------
+       A fragment in the address can stop autofocus, so focus the reply box after loading.
+       Do not move focus if the visitor already chose another control. */
+    var replyBox = $('textarea[autofocus]');
+    if (replyBox) {
+        var focusReply = function () {
+            if (document.activeElement === document.body) { replyBox.focus(); }
+        };
+        if (document.readyState === 'complete') { focusReply(); }
+        else { window.addEventListener('load', focusReply, { once: true }); }
+    }
+
     /* ---------- Report a comment ----------
        JavaScript opens the dialog; without it the same link opens the report page. */
     document.addEventListener('click', function (e) {

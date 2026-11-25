@@ -56,8 +56,8 @@ $comments = $comments ?? [];
                     </div>
                 <?php endif; ?>
 
-                <?php // The title wraps inside the card even when it contains a long word. ?>
-                <a href="<?= $href . ($comments ? '#comments' : '') ?>" class="mt-4 inline-flex max-w-full items-center gap-1 text-sm font-semibold underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"><span class="min-w-0 wrap-anywhere">See “<?= e($maker['PostTitle']) ?>”<?= $comments ? ' and comments' : '' ?></span></a>
+                <?php // This link opens the post at the top. ?>
+                <a href="<?= $href ?>" class="mt-4 inline-flex max-w-full items-center text-xs font-semibold underline decoration-accent decoration-2 underline-offset-4 hover:text-accent">Check out their work</a>
             </div>
         </div>
     </div>
