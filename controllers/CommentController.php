@@ -89,4 +89,61 @@ class CommentController extends BaseController
         $query = ['id' => $postId] + ($parentId > 0 ? ['reply' => $parentId] : []);
         redirect_to(url('post', $query) . '#' . ($parentId > 0 ? 'reply-' . $parentId : 'comment-form'));
     }
+
+    // Show a confirmation page for people without JavaScript.
+    public function confirmDelete(): void
+    {
+        $raw = $_GET['id'] ?? '';
+        $comment = is_string($raw) && ctype_digit($raw) && $raw !== '0' ? (new CommentModel($this->db))->find((int)$raw) : null;
+        if ($comment === null) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->mayDelete($comment)) {
+            $this->forbidden();
+            return;
+        }
+        $this->render('comment/delete', ['title' => 'Delete comment', 'comment' => $comment]);
+    }
+
+    // Check the CSRF token and permission again before deleting anything.
+    public function delete(): void
+    {
+        if (!is_post()) {
+            redirect_to(url('home'));
+        }
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to(url('home'));
+        }
+
+        $comments = new CommentModel($this->db);
+        $id = ctype_digit(post_str('id')) ? (int)post_str('id') : 0;
+        $comment = $id > 0 ? $comments->find($id) : null;
+        if ($comment === null) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->mayDelete($comment)) {
+            $this->forbidden();
+            return;
+        }
+
+        $comments->delete($id);
+        flash_set('success', 'The comment was deleted.');
+        redirect_to(url('post', ['id' => $comment['PostID']]) . '#comments');
+    }
+
+    // The comment's author, the owner of the post, or an admin may delete it.
+    private function mayDelete(array $comment): bool
+    {
+        $me = (int)$this->user['UserID'];
+        return $me === (int)$comment['UserID'] || $me === (int)$comment['PostOwnerID'] || $this->user['RoleName'] === 'admin';
+    }
+
+    private function forbidden(): void
+    {
+        http_response_code(403);
+        $this->render('pages/forbidden', ['title' => 'No access']);
+    }
 }

@@ -68,7 +68,7 @@ class CommentModel
     {
         $stmt = $this->db->prepare(
             'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt,
-                    p.UserID AS PostOwnerID, p.IsDraft,
+                    u.Username, p.UserID AS PostOwnerID, p.IsDraft,
                     CASE WHEN ' . self::AUTHOR_OK . ' THEN 1 ELSE 0 END AS AuthorVisible,
                     (SELECT COUNT(*) FROM `Comment` r WHERE r.ParentCommentID = c.CommentID) AS ReplyCount
                FROM `Comment` c

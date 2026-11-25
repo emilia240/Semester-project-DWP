@@ -8,6 +8,15 @@ Also needs: $comments, $commentTotal (how many are shown), $replyTo and $oldComm
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
+// These facts are shared by every comment and reply on this post.
+$commentCtx = [
+    'postId'      => (int)$post['PostID'],
+    'viewerId'    => $user === null ? 0 : (int)$user['UserID'],
+    'isAdmin'     => $user !== null && $user['RoleName'] === 'admin',
+    'postOwnerId' => (int)$post['UserID'],
+    'replyTo'     => $replyTo,
+    'old'         => $oldComment,
+];
 $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'], 'LastName' => $post['AuthorLastName']];
 ?>
 <section class="mx-auto max-w-[120rem] px-4 pb-16 pt-6 sm:px-16 md:px-24 lg:px-40"<?= $savedForm !== null ? ' data-saved-post-form="' . e($savedForm) . '"' : '' ?>>
@@ -93,7 +102,7 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
                         <p class="mt-4 opacity-80">No comments yet.</p>
                     <?php else: ?>
                         <ul class="mt-2 divide-y divide-base-300">
-                            <?php foreach ($comments as $c) { partial('comment', ['c' => $c, 'postId' => $post['PostID'], 'loggedIn' => $user !== null, 'replyTo' => $replyTo, 'old' => $oldComment]); } ?>
+                            <?php foreach ($comments as $c) { partial('comment', ['c' => $c, 'ctx' => $commentCtx]); } ?>
                         </ul>
                     <?php endif; ?>
                 </section>
