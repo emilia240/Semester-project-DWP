@@ -60,6 +60,84 @@ class CommentModel
     }
 
     /*
+    Find a comment and its post. The primary keys find the comment, post and author;
+    idx_comment_parentcomment helps count its replies.
+    AuthorVisible uses the same ban rule as the comment list.
+    */
+    public function find(int $id): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt,
+                    p.UserID AS PostOwnerID, p.IsDraft,
+                    CASE WHEN ' . self::AUTHOR_OK . ' THEN 1 ELSE 0 END AS AuthorVisible,
+                    (SELECT COUNT(*) FROM `Comment` r WHERE r.ParentCommentID = c.CommentID) AS ReplyCount
+               FROM `Comment` c
+               JOIN `Post` p ON p.PostID = c.PostID
+               JOIN `User` u ON u.UserID = c.UserID
+              WHERE c.CommentID = :id'
+        );
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch() ?: null;
+    }
+
+    // Save a comment or a reply. The database trigger creates the notification.
+    public function create(int $postId, int $userId, ?int $parentId, string $text): int
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO `Comment` (`PostID`, `UserID`, `ParentCommentID`, `CommentText`) VALUES (:post, :user, :parent, :text)'
+        );
+        $stmt->bindValue(':post', $postId, PDO::PARAM_INT);
+        $stmt->bindValue(':user', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':parent', $parentId, $parentId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':text', $text, PDO::PARAM_STR);
+        $stmt->execute();
+        return (int)$this->db->lastInsertId();
+    }
+
+    // Delete one comment. The database also removes its replies, likes, reports and notifications.
+    public function delete(int $id): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM `Comment` WHERE `CommentID` = :id');
+        $stmt->execute([':id' => $id]);
+    }
+
+    // idx_comment_user helps count this member's recent comments for the speed limit.
+    public function countSince(int $userId, int $seconds): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM `Comment` WHERE `UserID` = :u AND `CreatedAt` > (NOW() - INTERVAL :s SECOND)'
+        );
+        $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':s', $seconds, PDO::PARAM_INT);
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
+    /*
+    Find the same recent comment by this member, on this post and under the same parent.
+    <=> also matches two NULL parents, so normal comments can be checked for double clicks.
+    idx_comment_user helps find the member's comments.
+    */
+    public function sameRecently(int $userId, int $postId, ?int $parentId, string $text, int $seconds): ?int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT `CommentID` FROM `Comment`
+              WHERE `UserID` = :u AND `PostID` = :p AND `ParentCommentID` <=> :parent
+                AND `CommentText` = :t AND `CreatedAt` > (NOW() - INTERVAL :s SECOND)
+              ORDER BY `CommentID` DESC LIMIT 1'
+        );
+        $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':p', $postId, PDO::PARAM_INT);
+        $stmt->bindValue(':parent', $parentId, $parentId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':t', $text, PDO::PARAM_STR);
+        $stmt->bindValue(':s', $seconds, PDO::PARAM_INT);
+        $stmt->execute();
+        $id = $stmt->fetchColumn();
+        return $id === false ? null : (int)$id;
+    }
+
+    /*
     The maker card shows the newest comments on one post.
     The parent and author primary keys find a reply's parent and its author.
     A reply is hidden when its parent is hidden, just like on the post page.

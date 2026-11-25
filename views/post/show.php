@@ -3,8 +3,8 @@
 One post: the pictures on the left, everything about it on the right.
 Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin),
        $savedForm (the form just saved, or null).
-Likes work (the heart) and the comments can be read. Writing, saving and reporting come in later steps.
-Also needs: $comments (the comments with their replies), $commentTotal (how many comments and replies are shown).
+Likes and comments work. Saving and reporting come in later steps.
+Also needs: $comments, $commentTotal (how many are shown), $replyTo and $oldComment (text to refill after a mistake).
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
@@ -84,13 +84,16 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
                             <p class="text-sm opacity-80">Only members can write comments. Everyone can read them.</p>
                             <div class="mt-3 flex justify-center gap-2"><a href="<?= e(url('join')) ?>" class="btn btn-primary btn-sm rounded-full">Join us</a><a href="<?= e(url('login', ['back' => $post['PostID']])) ?>" class="btn btn-sm rounded-full">Log in</a></div>
                         </div>
+                    <?php else: ?>
+                        <?php // Keep the text after a mistake so the member can correct it. ?>
+                        <?php partial('comment_form', ['postId' => $post['PostID'], 'parent' => 0, 'text' => $replyTo === 0 ? $oldComment : null]); ?>
                     <?php endif; ?>
 
                     <?php if (!$comments): ?>
                         <p class="mt-4 opacity-80">No comments yet.</p>
                     <?php else: ?>
                         <ul class="mt-2 divide-y divide-base-300">
-                            <?php foreach ($comments as $c) { partial('comment', ['c' => $c]); } ?>
+                            <?php foreach ($comments as $c) { partial('comment', ['c' => $c, 'postId' => $post['PostID'], 'loggedIn' => $user !== null, 'replyTo' => $replyTo, 'old' => $oldComment]); } ?>
                         </ul>
                     <?php endif; ?>
                 </section>

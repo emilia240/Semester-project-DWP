@@ -50,11 +50,31 @@ class PostController extends BaseController
         }
         // The comments of a published post, as a tree (a draft has none).
         $thread = $post['IsDraft'] ? ['comments' => [], 'total' => 0] : (new CommentModel($this->db))->forPost((int)$post['PostID']);
+        // A reply box only opens for a normal comment visible on this post.
+        $replyTo = 0;
+        $raw = $_GET['reply'] ?? '';
+        if ($this->user !== null && is_string($raw) && ctype_digit($raw) && strlen($raw) <= 10) {
+            foreach ($thread['comments'] as $c) {
+                if ((int)$c['CommentID'] === (int)$raw) {
+                    $replyTo = (int)$raw;
+                }
+            }
+        }
+        // Keep rejected text once, on the same post and in the matching box.
+        $oldComment = null;
+        $old = $_SESSION['comment_old'] ?? null;
+        if (is_array($old) && (int)($old['post'] ?? 0) === (int)$post['PostID']) {
+            $oldComment = is_string($old['text'] ?? null) ? $old['text'] : null;
+            $replyTo = (int)($old['parent'] ?? 0) > 0 ? $replyTo : 0;
+            unset($_SESSION['comment_old']);
+        }
         $this->render('post/show', [
             'title' => $post['PostTitle'],
             'post'  => $post,
             'comments'     => $thread['comments'],
             'commentTotal' => $thread['total'],
+            'replyTo'      => $replyTo,
+            'oldComment'   => $oldComment,
             'mine'  => $this->isOwner($post),
             'canDelete' => $this->isOwner($post) || $this->isAdmin(),
             'savedForm' => $savedForm,
