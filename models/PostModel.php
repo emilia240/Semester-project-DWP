@@ -144,6 +144,7 @@ class PostModel
 
     // The shared query behind the lists: post + author + cover picture + category names and tags.
     // PostTag's primary key finds the tags for each post; Tag's primary key finds each tag name.
+    // idx_comment_post_created finds comments for the count; parent and author primary keys find hidden parents.
     // Same three like columns as find(): LikeCount, LikedByMe, AuthorShowLikes. :me appears ONCE, because the PDO setting
     // ATTR_EMULATE_PREPARES = false does not allow the same :name twice in one query.
     // $join and $order are only ever text written in THIS file (never user input), so they are safe to put in the SQL.
@@ -156,6 +157,16 @@ class PostModel
                     u.ShowLikes AS AuthorShowLikes,
                     (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID) AS LikeCount,
                     EXISTS (SELECT 1 FROM `PostLike` m WHERE m.PostID = p.PostID AND m.UserID = :me) AS LikedByMe,
+                    (SELECT COUNT(*)
+                       FROM `Comment` c
+                       JOIN `User` cu ON cu.UserID = c.UserID
+                       LEFT JOIN `Comment` parent ON parent.CommentID = c.ParentCommentID
+                       LEFT JOIN `User` pu ON pu.UserID = parent.UserID
+                      WHERE c.PostID = p.PostID
+                        AND (cu.IsBanned = 0 OR cu.BannedUntil <= NOW())
+                        AND (c.ParentCommentID IS NULL OR
+                             (parent.PostID = c.PostID AND parent.ParentCommentID IS NULL
+                              AND (pu.IsBanned = 0 OR pu.BannedUntil <= NOW())))) AS CommentCount,
                     i.FileName AS CoverFile,
                     (SELECT GROUP_CONCAT(c.CategoryName ORDER BY c.CategoryName SEPARATOR '|')
                        FROM `PostCategory` pc JOIN `Category` c ON c.CategoryID = pc.CategoryID

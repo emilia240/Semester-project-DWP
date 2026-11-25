@@ -77,21 +77,22 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
         <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker, 'comments' => $makerComments]); } ?>
     </section>
 <?php else: ?>
-    <section class="mx-auto grid max-w-[120rem] gap-10 px-4 pb-10 pt-12 sm:px-16 md:px-24 lg:px-40 <?= $maker !== null ? 'md:grid-cols-2 md:items-center' : '' ?>">
-        <div>
+    <?php // Members get a compact welcome and more room for the maker card on large screens. ?>
+    <section class="mx-auto grid max-w-[120rem] gap-10 px-4 pb-10 pt-12 sm:px-16 md:px-24 lg:px-40 <?= $maker !== null ? ($user['RoleName'] === 'admin' ? 'md:grid-cols-2 md:items-center' : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-center') : '' ?>">
+        <div class="min-w-0">
         <?php if ($user['RoleName'] === 'admin'): ?>
             <p class="font-hand text-5xl leading-none text-accent sm:text-6xl">Hi Boss</p>
             <h1 class="mt-3 text-6xl font-semibold leading-[0.95] sm:text-7xl lg:text-8xl">Welcome back.</h1>
             <p class="mt-5 text-2xl opacity-80">The reports and the numbers are waiting for you.</p>
             <div class="mt-8"><a href="<?= e(url('admin')) ?>" class="btn btn-primary btn-lg rounded-full">Go to the admin area <?= icon('arrow', 20) ?></a></div>
         <?php else: ?>
-            <p class="font-hand text-5xl leading-none text-accent sm:text-6xl">Good to see you</p>
-            <h1 class="mt-3 text-6xl font-semibold leading-[0.95] sm:text-7xl lg:text-8xl">Hello, <?= e($user['FirstName']) ?>!</h1>
-            <p class="mt-5 text-2xl opacity-80">Here is what the community made lately. Got something to show?</p>
-            <div class="mt-8 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary btn-lg rounded-full">Make a post <?= icon('arrow', 20) ?></a><a href="<?= e(url('members')) ?>" class="btn btn-ghost btn-lg rounded-full">My account</a></div>
+            <p class="font-hand text-3xl leading-none text-accent sm:text-4xl">Good to see you</p>
+            <h1 class="mt-3 wrap-anywhere text-4xl font-semibold leading-tight sm:text-5xl">Hello, <?= e($user['FirstName']) ?>!</h1>
+            <p class="mt-4 text-base opacity-80">Here is what the community made lately. Got something to show?</p>
+            <div class="mt-6 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post <?= icon('arrow', 16) ?></a><a href="<?= e(url('members')) ?>" class="btn btn-ghost rounded-full">My account</a></div>
         <?php endif; ?>
         </div>
-        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker, 'comments' => $makerComments]); } ?>
+        <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker, 'comments' => $makerComments, 'wide' => $user['RoleName'] !== 'admin']); } ?>
     </section>
 <?php endif; ?>
 

@@ -5,13 +5,15 @@ likes + saves this week). We do not tell members how, so nobody chases likes. Vi
 The photo keeps its own shape: nothing is cropped, a blurred copy of it fills the empty space. Colours are theme tokens (light and dark).
 Reading order, from big to small: the card title, the maker's username, the tagline, then the link to the post.
 Needs: $maker = the row from PostModel::makerOfTheWeek(), $comments = the newest comments under that post (may be empty).
+Optional: $wide lets the card fill the wider member welcome column.
 */
 $href = e(url('post', ['id' => $maker['PostID']]));
 $file = ImageUploader::url($maker['CoverFile']);
 $comments = $comments ?? [];
+$wide = $wide ?? false;
 ?>
 <?php // Leave a little room for the tilted card when a long title makes it taller. ?>
-<aside class="relative mx-auto w-full max-w-2xl px-1 pt-6" aria-label="Maker of the week" data-maker-card>
+<aside class="relative mx-auto w-full <?= $wide ? 'max-w-none' : 'max-w-2xl' ?> px-1 pt-6" aria-label="Maker of the week" data-maker-card>
     <div class="relative rotate-[-1deg] rounded-[2rem] border-[3px] border-dashed border-accent bg-base-100 p-5 shadow-xl sm:p-6">
         <span class="absolute -top-5 left-10 rotate-[-90deg] rounded-full bg-base-100 px-1 text-accent" aria-hidden="true"><?= craft_icon('scissors', 34) ?></span>
 

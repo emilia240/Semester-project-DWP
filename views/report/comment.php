@@ -9,7 +9,7 @@ Needs: $comment, $reasons, $old (reason and details), $error and $back.
     <p class="mt-3 opacity-80">Thank you for looking out for the community. A moderator will take a look.</p>
 
     <blockquote class="mt-4 wrap-anywhere rounded-box border border-base-300 bg-base-200 p-4">
-        <p class="text-sm font-bold">@<?= e($comment['Username']) ?></p>
+        <p class="text-sm font-bold"><?= e($comment['Username']) ?></p>
         <p class="mt-1 line-clamp-4"><?= e($comment['CommentText']) ?></p>
     </blockquote>
 

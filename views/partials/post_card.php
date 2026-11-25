@@ -50,6 +50,8 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
     <?php if (!$p['IsDraft']): ?>
         <footer class="mt-1 flex items-center gap-1 text-base-content/80">
             <?php partial('like_button', ['p' => $p, 'back' => $back]); ?>
+            <?php // The count includes visible comments and replies; the link opens the comment section. ?>
+            <a href="<?= $link ?>#comments" class="btn btn-ghost btn-sm gap-1" aria-label="<?= (int)$p['CommentCount'] ?> comments"><?= icon('comment', 18) ?> <?= (int)$p['CommentCount'] ?></a>
             <button type="button" class="btn btn-ghost btn-sm ml-auto" data-copy="<?= $link ?>" aria-label="Copy link"><?= icon('link', 18) ?></button>
         </footer>
     <?php endif; ?>

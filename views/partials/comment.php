@@ -19,7 +19,7 @@ $canDelete = $loggedIn && ($viewerId === (int)$c['UserID'] || $viewerId === (int
     <div class="flex items-start gap-3">
         <?= avatar($c, $isReply ? 36 : 40) ?>
         <div class="min-w-0 flex-1">
-            <p class="wrap-anywhere text-sm"><span class="font-bold">@<?= e($c['Username']) ?></span> <span class="opacity-80">· <?= e(when($c['CreatedAt'])) ?></span></p>
+            <p class="wrap-anywhere text-sm"><span class="font-bold"><?= e($c['Username']) ?></span> <span class="opacity-80">· <?= e(when($c['CreatedAt'])) ?></span></p>
             <?php // Long words and links wrap instead of stretching the page. ?>
             <p class="mt-1 wrap-anywhere leading-relaxed"><?= format_text($c['CommentText']) ?></p>
             <?php // A link opens the reply box even when JavaScript is off. ?>
