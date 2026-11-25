@@ -3,7 +3,7 @@
 "Maker of the week": a cut-out card with a taped photo. The maker is calculated by the view maker_of_the_week (the post with the most
 likes + saves this week). We do not tell members how, so nobody chases likes. Visitors cannot open profiles, so the card opens the post.
 The photo keeps its own shape: nothing is cropped, a blurred copy of it fills the empty space. Colours are theme tokens (light and dark).
-Reading order, from big to small: the card title, the maker's handle, the tagline, then the link to the post.
+Reading order, from big to small: the card title, the maker's username, the tagline, then the link to the post.
 Needs: $maker = the row from PostModel::makerOfTheWeek(), $comments = the newest comments under that post (may be empty).
 */
 $href = e(url('post', ['id' => $maker['PostID']]));
@@ -30,10 +30,10 @@ $comments = $comments ?? [];
                 <h2 class="font-hand text-4xl leading-none text-accent sm:text-5xl">Maker of the week</h2>
                 <svg class="mx-auto mt-1 text-accent sm:mx-0" width="150" height="10" viewBox="0 0 150 10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M3 6c12-6 22 6 34 0s22 6 34 0 22 6 34 0 22 6 40 0"/></svg>
 
-                <?php // Just the handle, in a normal size: the photo and the card title are the stars here. ?>
+                <?php // Just the username, in the same size, beside the avatar. ?>
                 <p class="mt-4 flex items-center justify-center gap-2 sm:justify-start">
                     <?= avatar($maker, 40) ?>
-                    <span class="wrap-anywhere text-lg font-semibold">@<?= e($maker['Username']) ?></span>
+                    <span class="wrap-anywhere text-lg font-semibold"><?= e($maker['Username']) ?></span>
                 </p>
                 <?php if (!empty($maker['Tagline'])): ?><p class="wrap-anywhere mt-2 text-sm opacity-80"><?= e($maker['Tagline']) ?></p><?php endif; ?>
 
@@ -57,7 +57,7 @@ $comments = $comments ?? [];
                 <?php endif; ?>
 
                 <?php // The title can shrink and wrap without pushing the arrow or the card sideways. ?>
-                <a href="<?= $href ?>" class="mt-4 inline-flex max-w-full items-center gap-1 text-sm font-semibold underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"><span class="min-w-0 wrap-anywhere">See “<?= e($maker['PostTitle']) ?>”</span> <?= icon('arrow', 16) ?></a>
+                <a href="<?= $href . ($comments ? '#comments' : '') ?>" class="mt-4 inline-flex max-w-full items-center gap-1 text-sm font-semibold underline decoration-accent decoration-2 underline-offset-4 hover:text-accent"><span class="min-w-0 wrap-anywhere">See “<?= e($maker['PostTitle']) ?>”<?= $comments ? ' and comments' : '' ?></span> <?= icon('arrow', 16) ?></a>
             </div>
         </div>
     </div>
