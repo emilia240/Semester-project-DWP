@@ -7,7 +7,7 @@ ProfileController  =  the profile page of a member.
          index.php?page=profile&id=7                 the profile of member number 7
          index.php?page=profile&show=draft           my own posts, only the drafts (also: published, all)
   follow follow or unfollow a member   (members only, POST only: the button on the profile)
-  edit   edit my own name, username, tagline, about text, badge and links   (members only)
+  edit   edit my own name, username, tagline, about text, badge, crafts and links   (members only)
          index.php?page=edit-profile
 
 Who may see what. This is checked here in PHP, not just hidden in the view:
@@ -264,8 +264,9 @@ class ProfileController extends BaseController
         $old['last_name']  = $member['LastName'];
         $old['username']   = $member['Username'];
 
-        // The links: the form has 3 fields (link1, link2, link3). They start with the links I have saved.
-        $linkFields = ['link1', 'link2', 'link3'];
+        // The links: the form has up to 6 fields (link1 ... link6). They start with the links I have saved.
+        // A field that is not in this list is never read, so nobody can save a seventh link.
+        $linkFields = ['link1', 'link2', 'link3', 'link4', 'link5', 'link6'];
         $savedLinks = $users->linksOf($myId);
         $position   = 0;
         foreach ($linkFields as $field) {

@@ -1,7 +1,7 @@
 <?php
 /*
 Edit profile: the tagline, the about text, the badge and the links (the "Your profile" card of the daisy design).
-Needs: $old (first_name, last_name, username, tagline, about, badge, crafts (the ids), link1, link2, link3: what the form shows now), $allCrafts (every craft: CategoryID, CategoryName) and $errors (field name => message).
+Needs: $old (first_name, last_name, username, tagline, about, badge, crafts (the ids), link1 ... link6: what the form shows now), $allCrafts (every craft: CategoryID, CategoryName) and $errors (field name => message).
 Everything is checked again in PHP (ProfileController::edit), the maxlength here only helps the person typing.
 The names (first name, last name, username) use the same rules as sign-up.
 It sits inside the Settings layout (the sidebar): see views/partials/settings_open.php.
@@ -118,21 +118,35 @@ partial('settings_open', ['active' => 'profile']);
             <?= field_error($errors, 'crafts') ?>
         </fieldset>
 
-        <?php // The links: three fields. A field you leave empty is skipped. https:// is added for you when you leave it out. ?>
+        <?php // The links: up to 6 fields. A field you leave empty is skipped. https:// is added for you when you leave it out. ?>
+        <?php // Fields 4 to 6 are hidden until they hold a link. With JavaScript you can add and remove rows; without it, 3 fields work. ?>
         <fieldset>
             <legend class="mb-1 font-bold">Your links</legend>
-            <p class="mb-3 text-sm opacity-80">Your shop, your Instagram, your website. Visitors get a “do you trust this link?” warning before they leave.</p>
+            <p class="mb-3 text-sm opacity-80">Up to 6 links: your shop, your Instagram, your website. Visitors get a “do you trust this link?” warning before they leave.</p>
             <div class="space-y-2">
                 <?php
-                $linkFields = ['link1' => 'Link 1', 'link2' => 'Link 2', 'link3' => 'Link 3'];
+                $linkFields = ['link1' => 'Link 1', 'link2' => 'Link 2', 'link3' => 'Link 3', 'link4' => 'Link 4', 'link5' => 'Link 5', 'link6' => 'Link 6'];
+                $rowNumber  = 0;
                 foreach ($linkFields as $field => $label):
+                    $rowNumber = $rowNumber + 1;
+                    // Rows 1 to 3 are always shown. A later row is shown only when it holds a link.
+                    $hideRow = '';
+                    if ($rowNumber > 3 && $old[$field] === '') {
+                        $hideRow = ' hidden';
+                    }
                 ?>
-                    <div>
-                        <input class="input input-bordered w-full <?= field_class($errors, $field) ?>" name="<?= e($field) ?>" maxlength="255" value="<?= e($old[$field]) ?>" placeholder="instagram.com/you" aria-label="<?= e($label) ?>"<?= field_attrs($errors, $field) ?>>
+                    <div data-link-row<?= $hideRow ?>>
+                        <div class="flex items-center gap-2">
+                            <input class="input input-bordered w-full <?= field_class($errors, $field) ?>" name="<?= e($field) ?>" maxlength="255" value="<?= e($old[$field]) ?>" placeholder="instagram.com/you" aria-label="<?= e($label) ?>"<?= field_attrs($errors, $field) ?>>
+                            <?php // The remove button is hidden here and shown by app.js, so it never shows without JavaScript. ?>
+                            <button type="button" class="btn btn-ghost btn-square" data-link-remove aria-label="Remove <?= e(strtolower($label)) ?>" hidden><?= icon('x', 18) ?></button>
+                        </div>
                         <?= field_error($errors, $field) ?>
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?php // Shown by app.js, and hidden again when all 6 rows are in use. ?>
+            <button type="button" class="btn btn-ghost btn-sm mt-2 rounded-full" data-link-add hidden><?= icon('plus', 16) ?> Add another link</button>
         </fieldset>
 
         <div class="flex gap-3">

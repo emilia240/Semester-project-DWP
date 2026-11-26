@@ -38,6 +38,41 @@ so every check that matters is repeated in PHP.
         });
     });
 
+    /* ---------- Edit profile: add and remove link rows (views/profile/edit.php) ----------
+       The form has 6 link rows (data-link-row). Rows with no link in them are hidden. "Add another link" shows the
+       next hidden row. The x button clears its row and hides it (an empty field is skipped when the form is saved).
+       The buttons are hidden in the HTML and shown here, so without JavaScript the 3 plain fields still work. */
+    var addLinkButton = $('[data-link-add]');
+    if (addLinkButton) {
+        // Show or hide "Add another link": it is only useful while there is a hidden row left.
+        var updateAddButton = function () {
+            var hiddenRows = $$('[data-link-row][hidden]');
+            addLinkButton.hidden = (hiddenRows.length === 0);
+        };
+
+        $$('[data-link-remove]').forEach(function (button) {
+            button.hidden = false;
+            button.addEventListener('click', function () {
+                var row = button.closest('[data-link-row]');
+                var input = row.querySelector('input');
+                input.value = '';
+                row.hidden = true;
+                updateAddButton();
+            });
+        });
+
+        addLinkButton.addEventListener('click', function () {
+            var nextRow = $('[data-link-row][hidden]');
+            if (nextRow) {
+                nextRow.hidden = false;
+                nextRow.querySelector('input').focus();
+            }
+            updateAddButton();
+        });
+
+        updateAddButton();
+    }
+
     /* ---------- Settings > Appearance (views/account/appearance.php) ----------
        Three choices, all kept in THIS browser (localStorage), nothing goes to the server:
        theme (data-theme-choice), text size (data-text-size) and reduce animations (data-motion-toggle).
