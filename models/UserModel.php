@@ -198,6 +198,33 @@ class UserModel
         ]);
     }
 
+    // Is this username used by SOMEONE ELSE? True or false. The member's own row does not count, so keeping your name is fine.
+    // LOWER() on both sides makes it case-insensitive: "Mira" and "mira" count as the same name (same idea as at sign-up).
+    public function usernameTakenByOther(string $username, int $myId): bool
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM `User` WHERE LOWER(Username) = LOWER(:u) AND UserID <> :id');
+        $stmt->execute([':u' => $username, ':id' => $myId]);
+        $howMany = (int)$stmt->fetchColumn();
+        if ($howMany > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    // Edit profile: save the first name, last name and username. Only this one member's row is changed (WHERE UserID = :id).
+    public function updateNames(int $userId, string $firstName, string $lastName, string $username): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE `User` SET FirstName = :first, LastName = :last, Username = :username WHERE UserID = :id'
+        );
+        $stmt->execute([
+            ':first'    => $firstName,
+            ':last'     => $lastName,
+            ':username' => $username,
+            ':id'       => $userId,
+        ]);
+    }
+
     // Edit profile: save the three texts of the profile. An empty text is saved as NULL (= "not filled in").
     // The WHERE UserID = :id part makes sure only this one member's row is changed.
     public function updateProfileTexts(int $userId, ?string $tagline, ?string $about, ?string $badge): void

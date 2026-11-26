@@ -7,7 +7,7 @@ ProfileController  =  the profile page of a member.
          index.php?page=profile&id=7                 the profile of member number 7
          index.php?page=profile&show=draft           my own posts, only the drafts (also: published, all)
   follow follow or unfollow a member   (members only, POST only: the button on the profile)
-  edit   edit my own tagline, about text, badge and links   (members only)
+  edit   edit my own name, username, tagline, about text, badge and links   (members only)
          index.php?page=edit-profile
 
 Who may see what. This is checked here in PHP, not just hidden in the view:
@@ -223,7 +223,7 @@ class ProfileController extends BaseController
     }
 
     // =================================================================
-    //   Edit profile: the tagline, the about text and the badge   (my own profile only)
+    //   Edit profile: the names, the tagline, the about text, the badge and the links   (my own profile only)
     //   GET   show the form with the texts I have now
     //   POST  check the form, check the lengths, save, then go back to my profile
     // There is no ?id= here on purpose: I can only ever edit MY OWN profile.
@@ -253,6 +253,11 @@ class ProfileController extends BaseController
             $old['badge'] = $member['Badge'];
         }
 
+        // The names start with what is saved now (they can never be empty: sign-up needs them).
+        $old['first_name'] = $member['FirstName'];
+        $old['last_name']  = $member['LastName'];
+        $old['username']   = $member['Username'];
+
         // The links: the form has 3 fields (link1, link2, link3). They start with the links I have saved.
         $linkFields = ['link1', 'link2', 'link3'];
         $savedLinks = $users->linksOf($myId);
@@ -273,6 +278,9 @@ class ProfileController extends BaseController
             $old['tagline'] = post_str('tagline');
             $old['about']   = post_str('about');
             $old['badge']   = post_str('badge');
+            $old['first_name'] = post_str('first_name');
+            $old['last_name']  = post_str('last_name');
+            $old['username']   = post_str('username');
             foreach ($linkFields as $field) {
                 $old[$field] = post_str($field);
             }
@@ -285,6 +293,28 @@ class ProfileController extends BaseController
             if (!csrf_check()) {
                 $errors['form'] = 'The form expired. Please try again.';
             } else {
+                // The names: the same rules as at sign-up. The rule functions live in includes/functions.php
+                // and give back an empty text when everything is fine, or a message when it is not.
+                $firstNameMessage = validate_person_name($old['first_name'], 'First name');
+                if ($firstNameMessage !== '') {
+                    $errors['first_name'] = $firstNameMessage;
+                }
+                $lastNameMessage = validate_person_name($old['last_name'], 'Last name');
+                if ($lastNameMessage !== '') {
+                    $errors['last_name'] = $lastNameMessage;
+                }
+
+                // The username is only checked when it was changed (so an old name can never block saving the rest).
+                // !== means "is not exactly the same as".
+                if ($old['username'] !== $member['Username']) {
+                    $usernameMessage = validate_username($old['username']);
+                    if ($usernameMessage !== '') {
+                        $errors['username'] = $usernameMessage;
+                    } elseif ($users->usernameTakenByOther($old['username'], $myId)) {
+                        $errors['username'] = 'That username is taken.';
+                    }
+                }
+
                 // Step 6: the lengths. The same limits as the database columns (80, 400 and 30 characters).
                 // mb_strlen counts characters, also for letters like æ, ø and å.
                 if (mb_strlen($old['tagline']) > 80) {
@@ -329,8 +359,9 @@ class ProfileController extends BaseController
                         $badge = $old['badge'];
                     }
 
-                    // A transaction = all or nothing: the texts and the links are saved together, or none of them.
+                    // A transaction = all or nothing: the names, the texts and the links are saved together, or none of them.
                     $this->db->beginTransaction();
+                    $users->updateNames($myId, $old['first_name'], $old['last_name'], $old['username']);
                     $users->updateProfileTexts($myId, $tagline, $about, $badge);
                     $users->replaceLinks($myId, $newLinks);
                     $this->db->commit();

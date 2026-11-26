@@ -1,9 +1,9 @@
 <?php
 /*
 Edit profile: the tagline, the about text, the badge and the links (the "Your profile" card of the daisy design).
-Needs: $old (tagline, about, badge, link1, link2, link3: what the form shows now) and $errors (field name => message).
+Needs: $old (first_name, last_name, username, tagline, about, badge, link1, link2, link3: what the form shows now) and $errors (field name => message).
 Everything is checked again in PHP (ProfileController::edit), the maxlength here only helps the person typing.
-Later steps add more to this form: names (step 6).
+The names (first name, last name, username) use the same rules as sign-up.
 */
 ?>
 <section class="mx-auto max-w-2xl px-4 pb-16 pt-10 sm:px-8">
@@ -16,6 +16,27 @@ Later steps add more to this form: names (step 6).
     <form method="post" action="<?= e(url('edit-profile')) ?>" class="tbh-card mt-8 space-y-5 p-6">
         <?= csrf_field() ?>
         <h2 class="text-2xl font-semibold">Your profile</h2>
+
+        <?php // The names. First and last name side by side on a big screen, under each other on a phone. ?>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+                <span class="mb-1 block font-bold">First name</span>
+                <input class="input input-bordered w-full <?= field_class($errors, 'first_name') ?>" name="first_name" maxlength="80" value="<?= e($old['first_name']) ?>" autocomplete="given-name"<?= field_attrs($errors, 'first_name') ?>>
+                <?= field_error($errors, 'first_name') ?>
+            </label>
+            <label class="block">
+                <span class="mb-1 block font-bold">Last name</span>
+                <input class="input input-bordered w-full <?= field_class($errors, 'last_name') ?>" name="last_name" maxlength="80" value="<?= e($old['last_name']) ?>" autocomplete="family-name"<?= field_attrs($errors, 'last_name') ?>>
+                <?= field_error($errors, 'last_name') ?>
+            </label>
+        </div>
+
+        <label class="block">
+            <span class="mb-1 block font-bold">Username</span>
+            <input class="input input-bordered w-full <?= field_class($errors, 'username') ?>" name="username" maxlength="30" value="<?= e($old['username']) ?>" autocomplete="username"<?= field_attrs($errors, 'username') ?>>
+            <?= field_error($errors, 'username') ?>
+            <span class="mt-1 block text-sm opacity-80">3 to 30 letters, numbers or underscores. Other members see it next to your posts.</span>
+        </label>
 
         <label class="block">
             <span class="mb-1 block font-bold">Tagline</span>
