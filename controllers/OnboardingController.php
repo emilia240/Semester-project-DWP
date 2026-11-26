@@ -45,7 +45,7 @@ class OnboardingController extends BaseController
                     try {
                         $categories->replaceForUser($userId, $picked);
                         $next = onboarding_next_step($this->db, $this->user);
-                        redirect_to(url($next ?? 'members'));
+                        redirect_to(url($next ?? 'home'));
                     } catch (PDOException $ex) {
                         error_log('saving crafts failed: ' . $ex->getMessage());
                         $errors['form'] = 'Something went wrong on our side. Please try again later.';

@@ -42,7 +42,7 @@ partial('auth_open');
         <?php if ($inOnboarding): ?>
             <button type="submit" form="logout-form" class="btn btn-ghost rounded-full">Log out</button>
         <?php else: ?>
-            <a href="<?= e(url('members')) ?>" class="btn btn-ghost rounded-full"><?= icon('back', 18) ?> Back</a>
+            <a href="<?= e(url('home')) ?>" class="btn btn-ghost rounded-full"><?= icon('back', 18) ?> Back</a>
         <?php endif; ?>
         <button type="submit" class="btn btn-primary btn-lg rounded-full" data-needs-select><?= $inOnboarding ? 'Continue' : 'Save' ?> <?= icon('arrow', 20) ?></button>
     </div>
