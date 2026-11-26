@@ -12,9 +12,36 @@ partial('settings_open', ['active' => 'profile']);
         <div class="alert alert-error" role="alert"><span><?= e($errors['form']) ?></span></div>
     <?php endif; ?>
 
-    <form method="post" action="<?= e(url('edit-profile')) ?>" class="tbh-card space-y-5 p-6">
+    <?php // enctype="multipart/form-data" is needed so that the form can send a FILE (the profile photo). ?>
+    <form method="post" action="<?= e(url('edit-profile')) ?>" enctype="multipart/form-data" class="tbh-card space-y-5 p-6">
         <?= csrf_field() ?>
         <h2 class="text-2xl font-semibold">Your profile</h2>
+
+        <?php // The profile photo: what it looks like now, a file field for a new one, and a box to remove it. ?>
+        <?php
+        // A red border on the file field when the photo was refused (file-input-error is the red border of a file field).
+        $photoClass = '';
+        if (isset($errors['avatar'])) {
+            $photoClass = 'file-input-error';
+        }
+        ?>
+        <div>
+            <span class="mb-2 block font-bold">Photo</span>
+            <div class="flex flex-wrap items-center gap-4">
+                <?= avatar($user, 64) ?>
+                <div class="min-w-0 flex-1 space-y-2">
+                    <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="file-input file-input-bordered w-full max-w-sm <?= e($photoClass) ?>" aria-label="Choose a new photo"<?= field_attrs($errors, 'avatar') ?>>
+                    <?php if (!empty($user['AvatarFile'])): ?>
+                        <label class="flex cursor-pointer items-center gap-2">
+                            <input type="checkbox" class="checkbox checkbox-sm" name="remove_avatar" value="1">
+                            <span>Remove my photo</span>
+                        </label>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?= field_error($errors, 'avatar') ?>
+            <span class="mt-1 block text-sm opacity-80">JPG, PNG or WEBP, up to <?= e(ImageUploader::fileLimitText()) ?>. It is cut to a square from the middle. Without a photo, your initials are shown. If the form shows a message, choose the photo again.</span>
+        </div>
 
         <?php // The names. First and last name side by side on a big screen, under each other on a phone. ?>
         <div class="grid gap-4 sm:grid-cols-2">

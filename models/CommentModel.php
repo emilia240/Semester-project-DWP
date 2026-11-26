@@ -30,7 +30,7 @@ class CommentModel
     {
         $stmt = $this->db->prepare(
             'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt, c.EditedAt,
-                    u.Username, u.FirstName, u.LastName, u.ShowLikes AS AuthorShowLikes,
+                    u.Username, u.FirstName, u.LastName, u.AvatarFile, u.ShowLikes AS AuthorShowLikes,
                     (SELECT COUNT(*) FROM `CommentLike` l WHERE l.CommentID = c.CommentID) AS LikeCount,
                     EXISTS (SELECT 1 FROM `CommentLike` m WHERE m.CommentID = c.CommentID AND m.UserID = :me) AS LikedByMe
                FROM `Comment` c

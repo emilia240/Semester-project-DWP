@@ -19,7 +19,7 @@ $commentCtx = [
     'editId'      => $editId,
     'editOld'     => $editOld,
 ];
-$author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'], 'LastName' => $post['AuthorLastName']];
+$author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'], 'LastName' => $post['AuthorLastName'], 'AvatarFile' => $post['AuthorAvatarFile']];
 ?>
 <section class="mx-auto max-w-[120rem] px-4 pb-16 pt-6 sm:px-16 md:px-24 lg:px-40"<?= $savedForm !== null ? ' data-saved-post-form="' . e($savedForm) . '"' : '' ?>>
     <?php // Go straight to the feed, even after several comment or report pages. ?>

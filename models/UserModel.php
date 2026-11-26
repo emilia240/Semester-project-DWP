@@ -34,7 +34,7 @@ class UserModel
     {
         $stmt = $this->db->prepare(
             'SELECT u.UserID, u.Username, u.FirstName, u.LastName, u.Email, u.RoleID, r.RoleName,
-                    u.EmailVerifiedAt, u.IsBanned, u.BannedUntil, u.Theme, u.GuidelinesAcceptedAt
+                    u.EmailVerifiedAt, u.IsBanned, u.BannedUntil, u.Theme, u.GuidelinesAcceptedAt, u.AvatarFile
                FROM `User` u
                JOIN `Role` r ON r.RoleID = u.RoleID
               WHERE u.UserID = :id
@@ -55,7 +55,7 @@ class UserModel
         $stmt = $this->db->prepare(
             'SELECT UserID, Username, FirstName, LastName,
                     CreatedAt, IsBanned, BannedUntil,
-                    Tagline, AboutText, Badge, IsProfilePublic, ShowFollowerCount
+                    Tagline, AboutText, Badge, AvatarFile, IsProfilePublic, ShowFollowerCount
                FROM `User`
               WHERE UserID = :id
               LIMIT 1'
@@ -223,6 +223,14 @@ class UserModel
             ':username' => $username,
             ':id'       => $userId,
         ]);
+    }
+
+    // Edit profile: save the name of the profile photo file, or NULL when the photo is removed (the initials are shown again).
+    // WHERE UserID = :id makes sure only this one member's row is changed.
+    public function updateAvatar(int $userId, ?string $fileName): void
+    {
+        $stmt = $this->db->prepare('UPDATE `User` SET AvatarFile = :file WHERE UserID = :id');
+        $stmt->execute([':file' => $fileName, ':id' => $userId]);
     }
 
     // Edit profile: save the three texts of the profile. An empty text is saved as NULL (= "not filled in").

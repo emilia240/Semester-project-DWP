@@ -26,7 +26,7 @@ class PostModel
     public function find(int $postId, int $viewerId = 0): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT p.*, u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName,
+            'SELECT p.*, u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName, u.AvatarFile AS AuthorAvatarFile,
                     u.ShowLikes AS AuthorShowLikes,
                     (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID) AS LikeCount,
                     EXISTS (SELECT 1 FROM `PostLike` m WHERE m.PostID = p.PostID AND m.UserID = :me) AS LikedByMe
@@ -131,7 +131,7 @@ class PostModel
     public function makerOfTheWeek(): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT m.UserID, m.Username, m.Tagline, m.PostID, m.PostTitle, u.FirstName, u.LastName,
+            'SELECT m.UserID, m.Username, m.Tagline, m.PostID, m.PostTitle, u.FirstName, u.LastName, u.AvatarFile,
                     p.AltText, i.FileName AS CoverFile
                FROM `maker_of_the_week` m
                JOIN `User` u      ON u.UserID = m.UserID
@@ -153,7 +153,7 @@ class PostModel
     {
         $stmt = $this->db->prepare(
             "SELECT p.PostID, p.UserID, p.PostTitle, p.PostDescription, p.AltText, p.UploadedAt, p.IsDraft,
-                    u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName,
+                    u.Username AS AuthorUsername, u.FirstName AS AuthorFirstName, u.LastName AS AuthorLastName, u.AvatarFile AS AuthorAvatarFile,
                     u.ShowLikes AS AuthorShowLikes,
                     (SELECT COUNT(*) FROM `PostLike` l WHERE l.PostID = p.PostID) AS LikeCount,
                     EXISTS (SELECT 1 FROM `PostLike` m WHERE m.PostID = p.PostID AND m.UserID = :me) AS LikedByMe,

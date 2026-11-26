@@ -84,7 +84,7 @@ function field_class(array $errors, string $name): string
 // ---------------------------------------------------------------------
 
 /*
-avatar() = a round badge with the initials of the user (until profile pictures exist).
+avatar() = a round picture of the user: the profile photo when there is one, otherwise a badge with the initials.
 The size comes from a fixed list of ready-made classes, because the Content-Security-Policy does not allow
 style="width: 40px" in the HTML. The colour depends on the user id, so a person always gets the same colour.
 */
@@ -98,6 +98,14 @@ function avatar(array $user, int $size = 40): string
         120 => 'size-30 text-5xl',
     ];
     $colors = ['bg-[#4a6a3c] text-white', 'bg-[#3f5d85] text-white', 'bg-[#8a5a12] text-white', 'bg-[#a14a26] text-white', 'bg-[#6a4f93] text-white'];
+
+    // A profile photo: the file name comes from the database, but we still only accept a name that looks EXACTLY like
+    // the ones we make (32 letters/numbers + .jpg). preg_match() checks a text against such a pattern.
+    // && means "and": the member has a photo (isset) AND the name has the right shape.
+    if (isset($user['AvatarFile']) && preg_match('/^[a-f0-9]{32}\.jpg$/', $user['AvatarFile'])) {
+        $photoClass = 'inline-block shrink-0 rounded-full bg-base-300 object-cover ' . ($sizes[$size] ?? $sizes[40]);
+        return '<img src="' . e(ImageUploader::url($user['AvatarFile'])) . '" alt="" class="' . $photoClass . '">';
+    }
 
     $color   = $colors[$user['UserID'] % count($colors)];
     $letters = mb_strtoupper(mb_substr($user['FirstName'], 0, 1) . mb_substr($user['LastName'], 0, 1));

@@ -9,7 +9,7 @@ $back = $back ?? 'post';
 $cats = $p['Categories'] !== null ? explode('|', $p['Categories']) : [];
 $tags = $p['Tags'] !== null ? explode('|', $p['Tags']) : [];            // free tags, only letters, digits, - and _, so '|' cannot be inside one
 $link = e(url('post', ['id' => $p['PostID']]));
-$author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'LastName' => $p['AuthorLastName']];
+$author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'LastName' => $p['AuthorLastName'], 'AvatarFile' => $p['AuthorAvatarFile']];
 ?>
 <article class="mb-10 break-inside-avoid px-1">
     <header class="flex items-center gap-3 pb-3">

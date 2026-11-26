@@ -195,9 +195,15 @@ class AccountController extends BaseController
             redirect_to(url('members'));
         }
 
-        // Step 6: the names of my picture files. The database rows disappear with the member, the files on the disk do not.
+        // Step 6: the names of my picture files (the pictures of my posts and my profile photo). The database rows disappear with the member, the files on the disk do not.
         $posts = new PostModel($this->db);
         $files = $posts->imageFilesOfUser($myId);
+
+        // The profile photo is a picture file too: add its name to the list (when there is one).
+        $myPhoto = $this->user['AvatarFile'];
+        if ($myPhoto !== null) {
+            $files[] = $myPhoto;
+        }
 
         // Step 7: delete the member. The database removes the rest by itself (ON DELETE CASCADE).
         $users->deleteUser($myId);

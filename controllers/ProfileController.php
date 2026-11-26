@@ -274,15 +274,21 @@ class ProfileController extends BaseController
 
         // Step 4: the form was sent.
         if (is_post()) {
-            // post_str() reads one text field from the form and removes spaces at the start and end.
-            $old['tagline'] = post_str('tagline');
-            $old['about']   = post_str('about');
-            $old['badge']   = post_str('badge');
-            $old['first_name'] = post_str('first_name');
-            $old['last_name']  = post_str('last_name');
-            $old['username']   = post_str('username');
-            foreach ($linkFields as $field) {
-                $old[$field] = post_str($field);
+            // Is the whole form bigger than the server allows (post_max_size)? Then PHP throws ALL of it away, also the
+            // CSRF token and the texts. So this is checked FIRST, and then the saved texts stay in the form.
+            $tooBig = ImageUploader::requestTooBig();
+
+            if ($tooBig === false) {
+                // post_str() reads one text field from the form and removes spaces at the start and end.
+                $old['tagline'] = post_str('tagline');
+                $old['about']   = post_str('about');
+                $old['badge']   = post_str('badge');
+                $old['first_name'] = post_str('first_name');
+                $old['last_name']  = post_str('last_name');
+                $old['username']   = post_str('username');
+                foreach ($linkFields as $field) {
+                    $old[$field] = post_str($field);
+                }
             }
 
             // A browser sends a new line as 2 characters (\r\n) but counts it as 1 in maxlength.
@@ -290,7 +296,9 @@ class ProfileController extends BaseController
             $old['about'] = str_replace("\r\n", "\n", $old['about']);
 
             // Step 5: is the form really from our own page? (CSRF token, same idea as every other form.)
-            if (!csrf_check()) {
+            if ($tooBig) {
+                $errors['avatar'] = 'That file is too big to send. The limit is ' . ImageUploader::fileLimitText() . '. Nothing was saved.';
+            } elseif (!csrf_check()) {
                 $errors['form'] = 'The form expired. Please try again.';
             } else {
                 // The names: the same rules as at sign-up. The rule functions live in includes/functions.php
@@ -344,6 +352,20 @@ class ProfileController extends BaseController
                     }
                 }
 
+                // The photo: if a file was chosen, check it and save it (a square, 256 x 256). The member's wish
+                // is only carried out when everything else in the form is fine, so no picture file is made for nothing.
+                $newAvatar = null;
+                $uploader  = new ImageUploader(ROOT_PATH . '/uploads');
+                $chosen    = ImageUploader::chosen($_FILES['avatar'] ?? null);   // ?? = "or, when it is not there:"
+                if (count($errors) === 0 && $chosen) {
+                    try {
+                        $newAvatar = $uploader->storeAvatar($_FILES['avatar']);
+                    } catch (UploadException $ex) {
+                        // The message is made for the member ("Only JPG, PNG and WEBP pictures are allowed.").
+                        $errors['avatar'] = $ex->getMessage();
+                    }
+                }
+
                 // Step 7: no errors? Then save. An empty text is saved as NULL (= "not filled in").
                 if (count($errors) === 0) {
                     $tagline = null;
@@ -364,7 +386,31 @@ class ProfileController extends BaseController
                     $users->updateNames($myId, $old['first_name'], $old['last_name'], $old['username']);
                     $users->updateProfileTexts($myId, $tagline, $about, $badge);
                     $users->replaceLinks($myId, $newLinks);
+
+                    // The photo: a new file replaces the old one. The ticked box "Remove my photo" (only when no new file
+                    // was chosen) sets the photo back to nothing. Otherwise the saved photo stays as it is.
+                    $oldAvatar = $member['AvatarFile'];   // the file name saved now (or NULL), loaded at the top of this method
+                    $removeBox = post_str('remove_avatar');
+                    if ($newAvatar !== null) {
+                        $users->updateAvatar($myId, $newAvatar);
+                    } elseif ($removeBox === '1') {
+                        $users->updateAvatar($myId, null);
+                    }
                     $this->db->commit();
+
+                    // The database is saved. NOW the old picture file can go (before this, a failure would have lost it).
+                    // Did the photo change? Yes when a new one was saved, or when the remove box was ticked.
+                    $photoChanged = false;
+                    if ($newAvatar !== null) {
+                        $photoChanged = true;
+                    }
+                    if ($removeBox === '1') {
+                        $photoChanged = true;
+                    }
+                    // && means "and": there has to be an old file AND the photo has to have changed.
+                    if ($oldAvatar !== null && $photoChanged === true) {
+                        $uploader->delete($oldAvatar);
+                    }
 
                     // Post, Redirect, Get: show a message once and go back to the profile (a refresh does not send the form again).
                     flash_set('success', 'Profile saved.');
