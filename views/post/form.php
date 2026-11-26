@@ -141,7 +141,7 @@ foreach ($isEdit ? $edit['images'] : [] as $image) {
             <a href="<?= e($isEdit ? url('post', ['id' => $edit['PostID']]) : url('home')) ?>" class="btn btn-ghost btn-lg rounded-full sm:ml-auto">Cancel</a>
         </div>
         <?php if (!$published): ?>
-            <p class="text-sm opacity-80">A draft is saved under <a class="link" href="<?= e(url('members')) ?>">My account</a>. Only you can see it.</p>
+            <p class="text-sm opacity-80">A draft is saved on <a class="link" href="<?= e(url('profile', ['show' => 'draft'])) ?>">your profile</a>. Only you can see it.</p>
         <?php endif; ?>
     </form>
 </section>

@@ -440,7 +440,7 @@ class PostController extends BaseController
         (new ImageUploader(ROOT_PATH . '/uploads'))->deleteMany($files);
 
         flash_set('success', 'The post was deleted.');
-        redirect_to(url($this->isOwner($post) ? 'members' : 'home'));
+        redirect_to(url($this->isOwner($post) ? 'profile' : 'home'));
     }
 
     // ---------------------------------------------------------------------

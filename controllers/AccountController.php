@@ -10,9 +10,6 @@ class AccountController extends BaseController
 {
     public function index(): void
     {
-        // My own posts, drafts included (only I see the drafts: includeDrafts is true only here).
-        $posts = (new PostModel($this->db))->forUser((int)$this->user['UserID'], true, $this->viewerId());
-
         // The birthdate is only shown on this page, so it is loaded here and not on every page of the site.
         $users     = new UserModel($this->db);
         $birthdate = $users->birthdateOf((int)$this->user['UserID']);
@@ -20,7 +17,7 @@ class AccountController extends BaseController
         // The four switches (public profile, show followers, show likes, notifications) with their saved values.
         $settings = $users->settingsOf((int)$this->user['UserID']);
 
-        $this->render('account/index', ['title' => 'Account settings', 'posts' => $posts, 'birthdate' => $birthdate, 'settings' => $settings]);
+        $this->render('account/index', ['title' => 'Account settings', 'birthdate' => $birthdate, 'settings' => $settings]);
     }
 
     // =================================================================
