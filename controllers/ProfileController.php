@@ -13,7 +13,7 @@ Who may see what. This is checked here in PHP, not just hidden in the view:
   - visitors cannot open the page at all (the route in index.php says 'member')
   - a member who is banned right now does not exist for other people (404 "not found")
   - a private profile shows only the name and "This profile is private" to other people (an admin may see it)
-  - e-mail, birthdate and drafts are shown to the owner only
+  - drafts are shown to the owner only (e-mail and birthdate are not on this page at all: they are on My account)
 */
 class ProfileController extends BaseController
 {
@@ -63,14 +63,7 @@ class ProfileController extends BaseController
             $hidden = true;
         }
 
-        // Step 7: e-mail and birthdate are private data. Remove them from the row unless it is my own profile,
-        // so that the view cannot show them by mistake.
-        if ($isOwn === false) {
-            unset($member['Email']);
-            unset($member['Birthdate']);
-        }
-
-        // Step 8: the posts. Drafts only for the owner. A hidden profile shows no posts at all.
+        // Step 7: the posts. Drafts only for the owner. A hidden profile shows no posts at all.
         $posts = [];
         if ($hidden === false) {
             $postModel     = new PostModel($this->db);
@@ -78,7 +71,7 @@ class ProfileController extends BaseController
             $posts         = $postModel->forUser($profileId, $includeDrafts, $this->viewerId());
         }
 
-        // Step 9: the number of published posts (drafts do not count, nobody else can see them).
+        // Step 8: the number of published posts (drafts do not count, nobody else can see them).
         $publishedCount = 0;
         foreach ($posts as $post) {
             if ((int)$post['IsDraft'] === 0) {
@@ -86,7 +79,7 @@ class ProfileController extends BaseController
             }
         }
 
-        // Step 10: on my own profile I can filter my posts: all, published or draft.
+        // Step 9: on my own profile I can filter my posts: all, published or draft.
         // Only these three words are allowed, anything else means "all".
         $show = 'all';
         if (isset($_GET['show']) && $isOwn) {
@@ -108,7 +101,7 @@ class ProfileController extends BaseController
             $posts = $kept;
         }
 
-        // Step 11: crafts, links and the follower numbers (the model reads and counts them in the database).
+        // Step 10: crafts, links and the follower numbers (the model reads and counts them in the database).
         $crafts    = [];
         $links     = [];
         $followers = 0;
@@ -120,13 +113,13 @@ class ProfileController extends BaseController
             $following = $users->countFollowing($profileId);
         }
 
-        // Step 12: may the viewer see the number of followers? The owner can switch it off for other people.
+        // Step 11: may the viewer see the number of followers? The owner can switch it off for other people.
         $showFollowers = true;
         if ((int)$member['ShowFollowerCount'] === 0 && $isOwn === false) {
             $showFollowers = false;
         }
 
-        // Step 13: show the page.
+        // Step 12: show the page.
         $this->render('profile/show', [
             'title'          => '@' . $member['Username'],
             'member'         => $member,

@@ -11,7 +11,12 @@ class AccountController extends BaseController
     {
         // My own posts, drafts included (only I see the drafts: includeDrafts is true only here).
         $posts = (new PostModel($this->db))->forUser((int)$this->user['UserID'], true, $this->viewerId());
-        $this->render('account/index', ['title' => 'My account', 'posts' => $posts]);
+
+        // The birthdate is only shown on this page, so it is loaded here and not on every page of the site.
+        $users     = new UserModel($this->db);
+        $birthdate = $users->birthdateOf((int)$this->user['UserID']);
+
+        $this->render('account/index', ['title' => 'My account', 'posts' => $posts, 'birthdate' => $birthdate]);
     }
 
     // =================================================================

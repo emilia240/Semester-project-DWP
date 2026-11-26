@@ -46,18 +46,18 @@ class UserModel
 
     /*
     One member's profile data for the profile page (ProfileController::show).
-    The e-mail and birthdate are in the row too, but the controller removes them for everybody except the owner.
+    On purpose it does NOT select the e-mail or the birthdate: the profile page never needs them
+    (the owner sees them on the My account page), so they are never even loaded here.
     Returns null when there is no member with this id.
     */
     public function findProfile(int $userId): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT u.UserID, u.Username, u.FirstName, u.LastName, u.Email, u.Birthdate, r.RoleName,
-                    u.CreatedAt, u.IsBanned, u.BannedUntil,
-                    u.Tagline, u.AboutText, u.Badge, u.IsProfilePublic, u.ShowFollowerCount
-               FROM `User` u
-               JOIN `Role` r ON r.RoleID = u.RoleID
-              WHERE u.UserID = :id
+            'SELECT UserID, Username, FirstName, LastName,
+                    CreatedAt, IsBanned, BannedUntil,
+                    Tagline, AboutText, Badge, IsProfilePublic, ShowFollowerCount
+               FROM `User`
+              WHERE UserID = :id
               LIMIT 1'
         );
         $stmt->execute([':id' => $userId]);
@@ -66,6 +66,18 @@ class UserModel
             return null;
         }
         return $row;
+    }
+
+    // The birthdate of a member as text like 1994-02-11 (empty text if there is no such member). Only My account shows it.
+    public function birthdateOf(int $userId): string
+    {
+        $stmt = $this->db->prepare('SELECT Birthdate FROM `User` WHERE UserID = :id LIMIT 1');
+        $stmt->execute([':id' => $userId]);
+        $birthdate = $stmt->fetchColumn();
+        if ($birthdate === false) {
+            return '';
+        }
+        return (string)$birthdate;
     }
 
     // The crafts a member has picked (names, A to Z). Used for the little chips on the profile.

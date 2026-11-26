@@ -1,5 +1,13 @@
 <?php
-/* My account. Needs: $user (the logged-in member, from index.php). Everything from the database goes through e(). */
+/* My account. Needs: $user (the logged-in member, from index.php), $posts and $birthdate (like 1994-02-11).
+   This is the "simple user display" from the assignment: name, e-mail, birthdate, role. Only the owner can open this page.
+   Everything from the database goes through e(). */
+
+// The birthdate as a readable date, for example 11 Feb 1994.
+$birthdateText = '';
+if ($birthdate !== '') {
+    $birthdateText = date('j M Y', strtotime($birthdate));
+}
 ?>
 <section class="mx-auto max-w-3xl px-4 pb-16 pt-12 sm:px-8">
     <p class="font-hand text-4xl text-accent">Your corner</p>
@@ -9,8 +17,10 @@
     <div class="tbh-card mt-8 overflow-x-auto">
         <table class="table">
             <tbody>
+                <tr><th scope="row">Name</th><td><?= e($user['FirstName'] . ' ' . $user['LastName']) ?></td></tr>
                 <tr><th scope="row">Username</th><td><?= e($user['Username']) ?></td></tr>
                 <tr><th scope="row">E-mail</th><td><?= e($user['Email']) ?></td></tr>
+                <tr><th scope="row">Birthdate</th><td><?= e($birthdateText) ?></td></tr>
                 <tr><th scope="row">Role</th><td><?= e($user['RoleName']) ?></td></tr>
                 <tr><th scope="row">E-mail confirmed</th><td><?= e($user['EmailVerifiedAt']) ?></td></tr>
             </tbody>

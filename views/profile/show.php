@@ -3,7 +3,7 @@
 A member's profile page, built from the daisy design (views/profile.php there). It only shows things;
 the decisions were made in ProfileController::show.
 Needs:
-  $member          one row from UserModel::findProfile()   (Email and Birthdate are only in it on my own profile)
+  $member          one row from UserModel::findProfile()   (it has no e-mail and no birthdate: those are on the My account page)
   $isOwn           true when this is MY profile
   $hidden          true when the profile is private and I may not see it
   $posts           the posts to show (rows from PostModel::forUser), already filtered by $show
@@ -96,20 +96,6 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
             <?php endif; ?>
         <?php endif; ?>
     </header>
-
-    <?php if ($isOwn): ?>
-        <?php // Only on my own profile: my private details. This is the "simple user display" from the assignment. ?>
-        <div class="tbh-card mt-6 overflow-x-auto p-2 sm:p-4">
-            <table class="table">
-                <tbody>
-                    <tr><th scope="row">E-mail</th><td><?= e($member['Email']) ?></td></tr>
-                    <tr><th scope="row">Birthdate</th><td><?= e(date('j M Y', strtotime($member['Birthdate']))) ?></td></tr>
-                    <tr><th scope="row">Role</th><td><?= e($member['RoleName']) ?></td></tr>
-                </tbody>
-            </table>
-        </div>
-        <p class="mt-2 text-sm opacity-80">Only you can see this box.</p>
-    <?php endif; ?>
 
     <?php if ($hidden === false): ?>
 
