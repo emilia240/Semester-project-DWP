@@ -13,7 +13,9 @@
 --    they are calculated, so nothing is stored twice (3NF) and nobody (not even the admin) can fake them.
 --  * A TRIGGER is SQL the database runs BY ITSELF after/before an INSERT, UPDATE or DELETE. NEW = the new row, OLD = the old row.
 --    Triggers are invisible in the PHP code, so every one is explained here and in the report.
---  * Only published posts (IsDraft = 0) of users who are not banned and have a public profile show up in the views.
+--  * Only published posts (IsDraft = 0) of users who are not banned show up in the views. "Not banned" = IsBanned is 0, OR the ban has run out
+--    (BannedUntil is in the past). A permanent ban has BannedUntil = NULL, so it never runs out. This is the same rule the feed uses in PHP.
+--    A private profile (IsProfilePublic = 0) only hides the profile PAGE. The posts still count here, as the switch on My account promises.
 -- =====================================================================
 
 USE dwp_semester;      -- ON SIMPLY: delete this line
@@ -39,7 +41,7 @@ SELECT p.`PostID`, p.`UserID`, p.`PostTitle`, p.`UploadedAt`,
      + (SELECT COUNT(*) FROM `Comment`  c WHERE c.`PostID` = p.`PostID` AND c.`CreatedAt` >= NOW() - INTERVAL 3 DAY) AS HotScore
 FROM `Post` p
 JOIN `User` u ON u.`UserID` = p.`UserID`
-WHERE p.`IsDraft` = 0 AND u.`IsBanned` = 0 AND u.`IsProfilePublic` = 1
+WHERE p.`IsDraft` = 0 AND (u.`IsBanned` = 0 OR u.`BannedUntil` <= NOW())
 HAVING HotScore > 0;
 
 -- ---------------------------------------------------------------------
@@ -52,7 +54,7 @@ FROM `Post` p
 JOIN `User` u    ON u.`UserID` = p.`UserID`
 JOIN `PostLike` l  ON l.`PostID` = p.`PostID`
 WHERE l.`LikedAt` >= NOW() - INTERVAL 7 DAY
-  AND p.`IsDraft` = 0 AND u.`IsBanned` = 0 AND u.`IsProfilePublic` = 1
+  AND p.`IsDraft` = 0 AND (u.`IsBanned` = 0 OR u.`BannedUntil` <= NOW())
 GROUP BY p.`PostID`, p.`UserID`, p.`PostTitle`, p.`UploadedAt`
 ORDER BY LikesThisWeek DESC, p.`UploadedAt` DESC
 LIMIT 4;
@@ -68,7 +70,7 @@ SELECT u.`UserID`, u.`Username`, u.`Tagline`, p.`PostID`, p.`PostTitle`,
      + (SELECT COUNT(*) FROM `BoardPost` b WHERE b.`PostID` = p.`PostID` AND b.`AddedAt` >= NOW() - INTERVAL 7 DAY) AS WeekScore
 FROM `Post` p
 JOIN `User` u ON u.`UserID` = p.`UserID`
-WHERE p.`IsDraft` = 0 AND u.`IsBanned` = 0 AND u.`IsProfilePublic` = 1
+WHERE p.`IsDraft` = 0 AND (u.`IsBanned` = 0 OR u.`BannedUntil` <= NOW())
 HAVING WeekScore > 0
 ORDER BY WeekScore DESC, p.`UploadedAt` DESC
 LIMIT 1;
