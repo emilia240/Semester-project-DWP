@@ -98,7 +98,7 @@ class UserModel
         return $names;
     }
 
-    // How many members follow this member. (Follow = one row per follower. Nobody can follow yet, so it is 0 for now.)
+    // How many members follow this member. (Follow = one row per follower.)
     public function countFollowers(int $userId): int
     {
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM `Follow` WHERE FollowedID = :id');
@@ -112,6 +112,32 @@ class UserModel
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM `Follow` WHERE FollowerID = :id');
         $stmt->execute([':id' => $userId]);
         return (int)$stmt->fetchColumn();
+    }
+
+    // Does this member follow that member? True or false. (One row in Follow = one "follow".)
+    public function isFollowing(int $followerId, int $followedId): bool
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM `Follow` WHERE FollowerID = :follower AND FollowedID = :followed');
+        $stmt->execute([':follower' => $followerId, ':followed' => $followedId]);
+        $howMany = (int)$stmt->fetchColumn();
+        if ($howMany > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    // Follow: add one row to Follow. The database trigger then makes a "follow" notification (if the member wants them).
+    public function follow(int $followerId, int $followedId): void
+    {
+        $stmt = $this->db->prepare('INSERT INTO `Follow` (FollowerID, FollowedID) VALUES (:follower, :followed)');
+        $stmt->execute([':follower' => $followerId, ':followed' => $followedId]);
+    }
+
+    // Unfollow: remove that one row from Follow.
+    public function unfollow(int $followerId, int $followedId): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM `Follow` WHERE FollowerID = :follower AND FollowedID = :followed');
+        $stmt->execute([':follower' => $followerId, ':followed' => $followedId]);
     }
 
     // The links a member has put on the profile (shop, Instagram ...), oldest first. Returns a list of web addresses.

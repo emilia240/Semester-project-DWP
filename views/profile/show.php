@@ -12,8 +12,9 @@ Needs:
   $links           the web addresses the member put on the profile
   $publishedCount  the number of published posts
   $followers, $following   the follower numbers, $showFollowers = may they be shown
+  $isFollowing     true when I already follow this member (the button then says Unfollow)
 Everything that comes from the database goes through e().
-Not built yet (it comes in later steps): Follow, Report, the Boards tab.
+Not built yet (it comes in later steps): Report, the Boards tab.
 */
 $fullName = $member['FirstName'] . ' ' . $member['LastName'];
 ?>
@@ -72,11 +73,29 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
                 <?php endif; ?>
             </div>
 
-            <?php // The buttons: top right on a big screen, under the text on a phone. Only the owner has them for now. ?>
+            <?php // The buttons: top right on a big screen, under the text on a phone. ?>
             <?php if ($isOwn): ?>
                 <div class="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
                     <a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full"><?= icon('plus', 16) ?> New post</a>
                     <a href="<?= e(url('edit-profile')) ?>" class="btn btn-outline rounded-full border-base-300"><?= icon('pencil', 16) ?> Edit profile</a>
+                </div>
+            <?php elseif ($hidden === false): ?>
+                <?php
+                // Someone else's profile: one button. It says Follow, or Unfollow when I follow this member already.
+                $followText  = 'Follow';
+                $followClass = 'btn btn-primary rounded-full';
+                if ($isFollowing) {
+                    $followText  = 'Unfollow';
+                    $followClass = 'btn btn-outline rounded-full border-base-300';
+                }
+                ?>
+                <div class="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
+                    <?php // A small form: it sends the id of THIS member. Who is following is taken from the login in PHP. ?>
+                    <form method="post" action="<?= e(url('follow')) ?>">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= e((string)$member['UserID']) ?>">
+                        <button type="submit" class="<?= e($followClass) ?>"><?= e($followText) ?></button>
+                    </form>
                 </div>
             <?php endif; ?>
         </div>

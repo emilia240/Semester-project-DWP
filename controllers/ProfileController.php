@@ -6,6 +6,7 @@ ProfileController  =  the profile page of a member.
          index.php?page=profile                      my own profile
          index.php?page=profile&id=7                 the profile of member number 7
          index.php?page=profile&show=draft           my own posts, only the drafts (also: published, all)
+  follow follow or unfollow a member   (members only, POST only: the button on the profile)
   edit   edit my own tagline, about text, badge and links   (members only)
          index.php?page=edit-profile
 
@@ -101,16 +102,21 @@ class ProfileController extends BaseController
             $posts = $kept;
         }
 
-        // Step 10: crafts, links and the follower numbers (the model reads and counts them in the database).
-        $crafts    = [];
-        $links     = [];
-        $followers = 0;
-        $following = 0;
+        // Step 10: crafts, links, the follower numbers and "do I follow this member?" (the model asks the database).
+        $crafts      = [];
+        $links       = [];
+        $followers   = 0;
+        $following   = 0;
+        $isFollowing = false;
         if ($hidden === false) {
             $crafts    = $users->craftsOf($profileId);
             $links     = $users->linksOf($profileId);
             $followers = $users->countFollowers($profileId);
             $following = $users->countFollowing($profileId);
+            // On my own profile there is no Follow button, so there is nothing to ask.
+            if ($isOwn === false) {
+                $isFollowing = $users->isFollowing($myId, $profileId);
+            }
         }
 
         // Step 11: may the viewer see the number of followers? The owner can switch it off for other people.
@@ -133,7 +139,87 @@ class ProfileController extends BaseController
             'followers'      => $followers,
             'following'      => $following,
             'showFollowers'  => $showFollowers,
+            'isFollowing'    => $isFollowing,
         ]);
+    }
+
+    // =================================================================
+    //   Follow or unfollow a member   (POST only: the Follow button on a profile)
+    //   One button does both: if I follow the member already, it unfollows; if not, it follows.
+    //   Who is following is always ME, from the login (the session). The form only says WHOM.
+    // =================================================================
+    public function follow(): void
+    {
+        $myId = (int)$this->user['UserID'];
+
+        // Step 1: this address is only for the button. Typing it in the address bar goes back to my profile.
+        if (!is_post()) {
+            redirect_to(url('profile'));
+        }
+
+        // Step 2: whom? The id comes from the form. readId() gives 0 when it is not a plain number.
+        $targetId = $this->readId(post_str('id'));
+
+        // Where to go back to afterwards: the profile of that member (or mine, when the id was no number).
+        $backUrl = url('profile');
+        if ($targetId !== 0) {
+            $backUrl = url('profile', ['id' => $targetId]);
+        }
+
+        // Step 3: is the form really from our own page? (CSRF token)
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to($backUrl);
+        }
+
+        // Step 4: an id that is not a real number can never be a member.
+        if ($targetId === 0) {
+            $this->notFound();
+            return;
+        }
+
+        // Step 5: nobody follows themselves (the database also refuses it, but a friendly message is better).
+        if ($targetId === $myId) {
+            flash_set('error', 'You cannot follow yourself.');
+            redirect_to(url('profile'));
+        }
+
+        // Step 6: the member must exist.
+        $users  = new UserModel($this->db);
+        $member = $users->findProfile($targetId);
+        if ($member === null) {
+            $this->notFound();
+            return;
+        }
+
+        // Step 7: a member who is banned right now does not exist for other people (same rule as the profile page).
+        if (is_banned($member)) {
+            $this->notFound();
+            return;
+        }
+
+        // Step 8: a private profile cannot be followed by other people (admins may see it, so they may follow).
+        $isAdmin = false;
+        if ($this->user['RoleName'] === 'admin') {
+            $isAdmin = true;
+        }
+        if ((int)$member['IsProfilePublic'] === 0 && $isAdmin === false) {
+            $this->notFound();
+            return;
+        }
+
+        // Step 9: follow or unfollow, depending on what is true in the database right now. Then say what happened.
+        $alreadyFollowing = $users->isFollowing($myId, $targetId);
+        if ($alreadyFollowing) {
+            $users->unfollow($myId, $targetId);
+            flash_set('success', 'You stopped following @' . $member['Username'] . '.');
+        } else {
+            $users->follow($myId, $targetId);
+            flash_set('success', 'You now follow @' . $member['Username'] . '.');
+        }
+
+        // Post, Redirect, Get: go back to the profile (a refresh does not click the button again).
+        redirect_to($backUrl);
     }
 
     // =================================================================

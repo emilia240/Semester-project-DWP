@@ -34,6 +34,7 @@ $routes = [
     'password'    => ['AccountController', 'password', 'member'],
     'save-settings' => ['AccountController', 'saveSettings', 'member'],       // POST only: the privacy and notification switches
     'profile'     => ['ProfileController', 'show', 'member'],                 // my profile, or ?id= another member's
+    'follow'      => ['ProfileController', 'follow', 'member'],               // POST only: follow or unfollow a member
     'edit-profile' => ['ProfileController', 'edit', 'member'],                // GET shows the form, POST saves it (my own profile only)
     'join-crafts'     => ['OnboardingController', 'crafts', 'onboarding'],        // join step 2
     'join-guidelines' => ['OnboardingController', 'guidelines', 'onboarding'],    // join step 3
