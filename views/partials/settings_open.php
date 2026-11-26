@@ -5,12 +5,13 @@ Use it like this (the same idea as auth_open / auth_close):
     partial('settings_open', ['active' => 'profile']);
     ... the cards of this section ...
     partial('settings_close');
-$active = which sidebar item is dark: 'profile' or 'account'.
+$active = which sidebar item is dark: 'profile', 'appearance' or 'account'.
 */
 
 // The sidebar items. 'key' is what $active is compared with, 'page' is the page the link opens.
 $items = [
     ['key' => 'profile', 'text' => 'Profile', 'page' => 'edit-profile', 'icon' => 'user'],
+    ['key' => 'appearance', 'text' => 'Appearance', 'page' => 'appearance', 'icon' => 'sun'],
     ['key' => 'account', 'text' => 'Account', 'page' => 'members',      'icon' => 'lock'],
 ];
 ?>

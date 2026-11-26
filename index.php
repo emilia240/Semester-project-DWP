@@ -31,6 +31,7 @@ $routes = [
     'reset'       => ['AuthController', 'reset', 'all'],
     'logout'      => ['AuthController', 'logout', 'all'],
     'members'     => ['AccountController', 'index', 'member'],
+    'appearance'  => ['AccountController', 'appearance', 'member'],           // Settings > Appearance (theme, text size, animations)
     'password'    => ['AccountController', 'password', 'member'],
     'delete-account' => ['AccountController', 'deleteAccount', 'member'],     // POST only: delete my own account
     'save-settings' => ['AccountController', 'saveSettings', 'member'],       // POST only: the privacy and notification switches

@@ -24,6 +24,58 @@ so every check that matters is repeated in PHP.
         });
     });
 
+    /* ---------- Settings > Appearance (views/account/appearance.php) ----------
+       Three choices, all kept in THIS browser (localStorage), nothing goes to the server:
+       theme (data-theme-choice), text size (data-text-size) and reduce animations (data-motion-toggle).
+       theme.js reads the same keys when a page opens, so the choice stays after a reload. */
+    function forget(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
+    // Theme: light, dark, or "like my device" (an empty value: forget the choice and follow the device).
+    $$('[data-theme-choice]').forEach(function (radio) {
+        // On load: tick the radio whose value is the saved theme ('' when nothing is saved).
+        var savedTheme = saved('tbh-theme');
+        if (savedTheme === null) { savedTheme = ''; }
+        radio.checked = (radio.value === savedTheme);
+
+        radio.addEventListener('change', function () {
+            var name = radio.value;
+            if (name === '') {
+                forget('tbh-theme');
+                if (matchMedia('(prefers-color-scheme: dark)').matches) { name = 'tobehuman-dark'; } else { name = 'tobehuman'; }
+            } else {
+                save('tbh-theme', name);
+            }
+            document.documentElement.setAttribute('data-theme', name);
+        });
+    });
+
+    // Text size: 90%, 100%, 115% or 130%. theme.js puts it in --tbh-text-size, and the CSS makes the page text that big.
+    $$('[data-text-size]').forEach(function (radio) {
+        var savedSize = saved('tbh-text');
+        if (savedSize === null) { savedSize = '100%'; }
+        radio.checked = (radio.value === savedSize);
+
+        radio.addEventListener('change', function () {
+            save('tbh-text', radio.value);
+            document.documentElement.style.setProperty('--tbh-text-size', radio.value);
+        });
+    });
+
+    // Reduce animations: the switch is on when 'off' is saved for tbh-motion. The class on <html> stops the animations.
+    $$('[data-motion-toggle]').forEach(function (toggle) {
+        toggle.checked = (saved('tbh-motion') === 'off');
+
+        toggle.addEventListener('change', function () {
+            if (toggle.checked) {
+                save('tbh-motion', 'off');
+                document.documentElement.classList.add('reduce-motion');
+            } else {
+                save('tbh-motion', 'on');
+                document.documentElement.classList.remove('reduce-motion');
+            }
+        });
+    });
+
     /* ---------- show / hide password: <button data-pw-toggle> next to <input data-pw> ---------- */
     $$('[data-pw-toggle]').forEach(function (button) {
         button.addEventListener('click', function () {

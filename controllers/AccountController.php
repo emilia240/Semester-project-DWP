@@ -16,6 +16,13 @@ class AccountController extends BaseController
         $this->showAccount([]);
     }
 
+    // Settings > Appearance: only shows the page. Nothing is saved on the server: the choices (theme, text size,
+    // animations) are kept in the browser of this device by assets/js/app.js, so there is no form and no POST here.
+    public function appearance(): void
+    {
+        $this->render('account/appearance', ['title' => 'Appearance settings']);
+    }
+
     // Shows the Account page. $errors (field name => message) is only filled when the Change password form was wrong.
     private function showAccount(array $errors): void
     {
