@@ -2,13 +2,22 @@
 /*
 AccountController  =  pages for a logged-in member (index.php already checked that, see the 'member' routes).
 
-  members   Settings > Account: the details we have about you, and the privacy and notification switches
+  members   Settings > Account: the details we have about you, the Change password form, the privacy and notification switches,
+            Log out and Delete account
   save-settings   saves the four switches (POST only)
-  password  change the password while logged in      (FigJam flow: "Change password (logged in)")
+  password  saves a new password while logged in      (POST only, the form is on the Account page)
+  delete-account  deletes my own account for good     (POST only, needs my password)
 */
 class AccountController extends BaseController
 {
     public function index(): void
+    {
+        // No errors to show when the page is just opened.
+        $this->showAccount([]);
+    }
+
+    // Shows the Account page. $errors (field name => message) is only filled when the Change password form was wrong.
+    private function showAccount(array $errors): void
     {
         // The birthdate is only shown on this page, so it is loaded here and not on every page of the site.
         $users     = new UserModel($this->db);
@@ -17,7 +26,7 @@ class AccountController extends BaseController
         // The four switches (public profile, show followers, show likes, notifications) with their saved values.
         $settings = $users->settingsOf((int)$this->user['UserID']);
 
-        $this->render('account/index', ['title' => 'Account settings', 'birthdate' => $birthdate, 'settings' => $settings]);
+        $this->render('account/index', ['title' => 'Account settings', 'birthdate' => $birthdate, 'settings' => $settings, 'errors' => $errors]);
     }
 
     // =================================================================
@@ -76,6 +85,11 @@ class AccountController extends BaseController
     // =================================================================
     public function password(): void
     {
+        // The form is on the Account page now. Opening this address by hand just goes there.
+        if (!is_post()) {
+            redirect_to(url('members'));
+        }
+
         $users  = new UserModel($this->db);
         $tokens = new TokenModel($this->db);
         $errors = [];
@@ -123,11 +137,71 @@ class AccountController extends BaseController
 
                     send_password_changed_email($this->user['Email'], $this->user['Username']);
                     flash_set('success', 'Password changed.');
-                    redirect_to(url('password'));
+                    redirect_to(url('members'));
                 }
             }
         }
 
-        $this->render('account/password', ['title' => 'Change password', 'errors' => $errors]);
+        // Something was wrong: show the Account page again, now with the messages under the fields.
+        $this->showAccount($errors);
+    }
+
+    // =================================================================
+    //   My account -> "Delete account"   (POST only)
+    //   It deletes MY OWN account for good: the id is the logged-in member's (session), never from the form.
+    //   The password is asked again, so nobody at an unlocked computer can do it.
+    // =================================================================
+    public function deleteAccount(): void
+    {
+        $myId = (int)$this->user['UserID'];
+
+        // Step 1: this address is only for the form. Typing it in the address bar goes back to the Account page.
+        if (!is_post()) {
+            redirect_to(url('members'));
+        }
+
+        // Step 2: is the form really from our own page? (CSRF token)
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to(url('members'));
+        }
+
+        // Step 3: an admin account cannot be deleted here (the site would have no admin left).
+        if ($this->user['RoleName'] === 'admin') {
+            flash_set('error', 'An admin account cannot be deleted here.');
+            redirect_to(url('members'));
+        }
+
+        // Step 4: wrong passwords count, like at login and at Change password. Too many in a row = wait a minute.
+        if (login_is_locked()) {
+            flash_set('error', 'Too many failed attempts. Please wait a minute and try again.');
+            redirect_to(url('members'));
+        }
+
+        // Step 5: is the password right? password_verify() compares what was typed with the saved hash.
+        $users    = new UserModel($this->db);
+        $password = post_raw('password');
+        $hash     = $users->findHash($myId);
+        if ($hash === null || !password_verify($password, $hash)) {
+            login_register_failure();
+            flash_set('error', 'The password is wrong. Nothing was deleted.');
+            redirect_to(url('members'));
+        }
+
+        // Step 6: the names of my picture files. The database rows disappear with the member, the files on the disk do not.
+        $posts = new PostModel($this->db);
+        $files = $posts->imageFilesOfUser($myId);
+
+        // Step 7: delete the member. The database removes the rest by itself (ON DELETE CASCADE).
+        $users->deleteUser($myId);
+
+        // Step 8: now delete the picture files from the disk.
+        $uploader = new ImageUploader(ROOT_PATH . '/uploads');
+        $uploader->deleteMany($files);
+
+        // Step 9: log out (the account does not exist any more) and say goodbye on the front page.
+        destroy_session();
+        flash_set('success', 'Your account was deleted. Goodbye.');
+        redirect_to(url('home'));
     }
 }

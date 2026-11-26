@@ -240,6 +240,14 @@ class UserModel
         ]);
     }
 
+    // Delete a member. The database does the rest by itself (ON DELETE CASCADE): the posts, comments, likes,
+    // follows, notifications, links, crafts and tokens of this member disappear together with the row.
+    public function deleteUser(int $userId): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM `User` WHERE UserID = :id');
+        $stmt->execute([':id' => $userId]);
+    }
+
     // Save a new password hash (used when the hash is made stronger at login).
     public function updatePasswordHash(int $userId, string $hash): void
     {

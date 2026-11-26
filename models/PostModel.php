@@ -315,6 +315,20 @@ class PostModel
         }
     }
 
+    // The picture file names of ALL posts of one member (used before an account is deleted: the database rows
+    // disappear together with the member, but the picture files on the disk must be deleted by us).
+    public function imageFilesOfUser(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT pi.FileName
+               FROM `PostImage` pi
+               JOIN `Post` p ON p.PostID = pi.PostID
+              WHERE p.UserID = :id'
+        );
+        $stmt->execute([':id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     // The three "parts" of a post, written inside the caller's transaction.
     private function writeParts(int $postId, array $categoryIds, array $tags, array $images): void
     {

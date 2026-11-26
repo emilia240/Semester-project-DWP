@@ -32,6 +32,7 @@ $routes = [
     'logout'      => ['AuthController', 'logout', 'all'],
     'members'     => ['AccountController', 'index', 'member'],
     'password'    => ['AccountController', 'password', 'member'],
+    'delete-account' => ['AccountController', 'deleteAccount', 'member'],     // POST only: delete my own account
     'save-settings' => ['AccountController', 'saveSettings', 'member'],       // POST only: the privacy and notification switches
     'profile'     => ['ProfileController', 'show', 'member'],                 // my profile, or ?id= another member's
     'follow'      => ['ProfileController', 'follow', 'member'],               // POST only: follow or unfollow a member
