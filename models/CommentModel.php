@@ -21,14 +21,18 @@ class CommentModel
 
     /*
     Load the visible comments of one post, oldest first, and attach replies to their parents.
+    Each row also has the heart numbers: LikeCount, LikedByMe (for $viewerId, 0 = visitor) and AuthorShowLikes.
+    idx_commentlike_comment (and the primary key) find the likes of one comment.
     idx_comment_post_created finds the comments for the post. A reply is left out if its parent is hidden.
     The total counts only comments and replies that are actually shown, up to the limit.
     */
-    public function forPost(int $postId): array
+    public function forPost(int $postId, int $viewerId = 0): array
     {
         $stmt = $this->db->prepare(
             'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt, c.EditedAt,
-                    u.Username, u.FirstName, u.LastName
+                    u.Username, u.FirstName, u.LastName, u.ShowLikes AS AuthorShowLikes,
+                    (SELECT COUNT(*) FROM `CommentLike` l WHERE l.CommentID = c.CommentID) AS LikeCount,
+                    EXISTS (SELECT 1 FROM `CommentLike` m WHERE m.CommentID = c.CommentID AND m.UserID = :me) AS LikedByMe
                FROM `Comment` c
                JOIN `User` u ON u.UserID = c.UserID
               WHERE c.PostID = :post AND ' . self::AUTHOR_OK . '
@@ -36,6 +40,7 @@ class CommentModel
               LIMIT ' . self::PAGE_LIMIT
         );
         $stmt->bindValue(':post', $postId, PDO::PARAM_INT);
+        $stmt->bindValue(':me', $viewerId, PDO::PARAM_INT);   // :me appears ONCE (the PDO setting allows each name only once)
         $stmt->execute();
 
         $top = [];

@@ -1,7 +1,7 @@
 <?php
 /*
 One comment and its replies (one level), as a list item.
-Needs: $c = a comment row from CommentModel::forPost() (with its 'replies'), $isReply (true for a reply),
+Needs: $c = a comment row from CommentModel::forPost() (with its 'replies' and heart numbers), $isReply (true for a reply),
        $ctx = the post, viewer, permissions, reply box and old text shared by the comments.
 The author sees Edit and Delete; the post owner and admin see Delete. PHP checks their permission again.
 When $ctx['editId'] is this comment, the text is replaced by the edit box (the Edit link opens it, with or without JavaScript).
@@ -31,26 +31,29 @@ $canDelete = $loggedIn && ($viewerId === (int)$c['UserID'] || $viewerId === (int
                 <?php // Long words and links wrap instead of stretching the page. ?>
                 <p class="mt-1 wrap-anywhere leading-relaxed"><?= format_text($c['CommentText']) ?></p>
             <?php endif; ?>
-            <?php // Reply, Edit, Report and Delete are links, so they work even when JavaScript is off. ?>
-            <?php if ($loggedIn && !$editing): ?>
+            <?php // The heart is for everyone (a visitor's heart leads to log in). Reply, Edit, Report and Delete are links, so they work even when JavaScript is off. ?>
+            <?php if (!$editing): ?>
                 <div class="mt-1 flex flex-wrap items-center gap-1 text-sm">
-                    <?php if (!$isReply): ?>
-                        <a href="<?= e(url('post', ['id' => $postId, 'reply' => $cid]) . '#reply-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('reply', 14) ?> Reply</a>
-                    <?php endif; ?>
-                    <?php if ($isAuthor): ?>
-                        <?php // Only the author can change the words. The link opens the edit box in place, also without JavaScript. ?>
-                        <a href="<?= e(url('post', ['id' => $postId, 'edit' => $cid]) . '#edit-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('pencil', 14) ?> Edit</a>
-                    <?php else: ?>
-                        <?php // The normal link opens a page; JavaScript opens the same form in a dialog. ?>
-                        <a href="<?= e(url('report-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1" data-report="<?= $cid ?>" aria-label="Report this comment"><?= icon('flag', 14) ?> Report</a>
-                    <?php endif; ?>
-                    <?php if ($canDelete): ?>
-                        <?php // The normal link is a fallback; JavaScript opens the confirmation dialog instead. ?>
-                        <a href="<?= e(url('confirm-delete-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1 text-error" data-confirm="Delete this comment?" data-confirm-text="Any replies will be removed too. This cannot be undone." data-confirm-form="delete-comment-<?= $cid ?>"><?= icon('trash', 14) ?> Delete</a>
-                        <form method="post" action="<?= e(url('delete-comment')) ?>" id="delete-comment-<?= $cid ?>" class="hidden">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="id" value="<?= $cid ?>">
-                        </form>
+                    <?php partial('comment_like', ['c' => $c]); ?>
+                    <?php if ($loggedIn): ?>
+                        <?php if (!$isReply): ?>
+                            <a href="<?= e(url('post', ['id' => $postId, 'reply' => $cid]) . '#reply-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('reply', 14) ?> Reply</a>
+                        <?php endif; ?>
+                        <?php if ($isAuthor): ?>
+                            <?php // Only the author can change the words. The link opens the edit box in place, also without JavaScript. ?>
+                            <a href="<?= e(url('post', ['id' => $postId, 'edit' => $cid]) . '#edit-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('pencil', 14) ?> Edit</a>
+                        <?php else: ?>
+                            <?php // The normal link opens a page; JavaScript opens the same form in a dialog. ?>
+                            <a href="<?= e(url('report-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1" data-report="<?= $cid ?>" aria-label="Report this comment"><?= icon('flag', 14) ?> Report</a>
+                        <?php endif; ?>
+                        <?php if ($canDelete): ?>
+                            <?php // The normal link is a fallback; JavaScript opens the confirmation dialog instead. ?>
+                            <a href="<?= e(url('confirm-delete-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1 text-error" data-confirm="Delete this comment?" data-confirm-text="Any replies will be removed too. This cannot be undone." data-confirm-form="delete-comment-<?= $cid ?>"><?= icon('trash', 14) ?> Delete</a>
+                            <form method="post" action="<?= e(url('delete-comment')) ?>" id="delete-comment-<?= $cid ?>" class="hidden">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="id" value="<?= $cid ?>">
+                            </form>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>

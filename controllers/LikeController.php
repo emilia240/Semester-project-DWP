@@ -1,7 +1,8 @@
 <?php
 /*
-LikeController  =  the heart button: like a post, or take the like back.
-Route: index.php?page=like   (POST only, members only: the route table in index.php already checked that you are logged in).
+LikeController  =  the heart button: like a post or a comment, or take the like back.
+Routes: index.php?page=like (a post) and index.php?page=like-comment (a comment). POST only, members only:
+the route table in index.php already checked that you are logged in.
 
 What likeOrUnlike() checks, in this order:
   1. it must be a POST            (a link or an address typed by hand does nothing)
@@ -51,6 +52,61 @@ class LikeController extends BaseController
             return;
         }
         redirect_to($this->backUrl($back, $id));
+    }
+
+    /*
+    The heart under a comment. Same steps as likeOrUnlike(), but the id is a COMMENT id:
+    POST only, CSRF, digits only, the comment must be visible (published post, author not banned), then like or unlike and count again.
+    JavaScript gets {"ok":true,"liked":true,"count":3}; a plain form gets a redirect back to that comment.
+    */
+    public function likeOrUnlikeComment(): void
+    {
+        $json = strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
+
+        if (!is_post()) {
+            redirect_to(url('home'));
+        }
+
+        $id = ctype_digit(post_str('id')) ? (int)post_str('id') : 0;
+
+        if (!csrf_check()) {
+            $this->failComment($json, 403, 'The form expired. Please try again.');
+            return;
+        }
+
+        $likes  = new LikeModel($this->db);
+        $userId = (int)$this->user['UserID'];
+
+        if ($id < 1 || ($before = $likes->commentSummary($id, $userId)) === null) {
+            $this->failComment($json, 404, 'That comment was not found.');
+            return;
+        }
+
+        $liked = $likes->likeOrUnlikeComment($userId, $id);
+        $now   = $likes->commentSummary($id, $userId);
+
+        // The number is only sent when the comment's author allows it (same switch as for posts).
+        $count = ($now !== null && $now['showCount']) ? $now['count'] : null;
+
+        if ($json) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'liked' => $liked, 'count' => $count]);
+            return;
+        }
+        redirect_to(url('post', ['id' => $before['postId']]) . '#comment-' . $id);
+    }
+
+    // An error for the comment heart: JSON for JavaScript, otherwise a message on the front page (we may not know the post).
+    private function failComment(bool $json, int $status, string $message): void
+    {
+        if ($json) {
+            http_response_code($status);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => $message]);
+            return;
+        }
+        flash_set('error', $message);
+        redirect_to(url('home'));
     }
 
     // An error answer: JSON for JavaScript, otherwise a message on the page we came from.

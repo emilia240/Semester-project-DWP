@@ -228,7 +228,8 @@ so every check that matters is repeated in PHP.
             }
             button.setAttribute('aria-pressed', res.data.liked ? 'true' : 'false');
             var number = button.querySelector('[data-like-count]');
-            if (number && res.data.count !== null) { number.textContent = res.data.count; }
+            // A comment heart (data-hide-zero) shows nothing instead of 0, like the page does when it loads.
+            if (number && res.data.count !== null) { number.textContent = (res.data.count === 0 && number.hasAttribute('data-hide-zero')) ? '' : res.data.count; }
             button.disabled = false;
         }).catch(function () {
             // Never resend: the first request may have succeeded even if its answer was lost.

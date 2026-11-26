@@ -40,6 +40,7 @@ $routes = [
     'confirm-delete-post' => ['PostController', 'confirmDelete', 'member'],
     'delete-post' => ['PostController', 'delete', 'member'],            // POST only
     'like'        => ['LikeController', 'likeOrUnlike', 'member'],            // POST only
+    'like-comment' => ['LikeController', 'likeOrUnlikeComment', 'member'],     // POST only
     'add-comment' => ['CommentController', 'add', 'member'],                  // POST only
     'edit-comment' => ['CommentController', 'update', 'member'],              // POST only
     'confirm-delete-comment' => ['CommentController', 'confirmDelete', 'member'],

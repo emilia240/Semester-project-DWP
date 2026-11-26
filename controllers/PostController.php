@@ -49,7 +49,7 @@ class PostController extends BaseController
             unset($_SESSION['post_save_back']);
         }
         // The comments of a published post, as a tree (a draft has none).
-        $thread = $post['IsDraft'] ? ['comments' => [], 'total' => 0] : (new CommentModel($this->db))->forPost((int)$post['PostID']);
+        $thread = $post['IsDraft'] ? ['comments' => [], 'total' => 0] : (new CommentModel($this->db))->forPost((int)$post['PostID'], $this->viewerId());
         // ?edit=12 opens the edit box in place of comment 12, but only for its author and only when it is visible on this post.
         $editId = 0;
         $rawEdit = $_GET['edit'] ?? '';
