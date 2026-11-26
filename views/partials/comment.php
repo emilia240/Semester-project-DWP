@@ -22,7 +22,14 @@ $canDelete = $loggedIn && ($viewerId === (int)$c['UserID'] || $viewerId === (int
     <div class="flex items-start gap-3">
         <?= avatar($c, $isReply ? 36 : 40) ?>
         <div class="min-w-0 flex-1">
-            <p class="wrap-anywhere text-sm"><span class="font-bold"><?= e($c['Username']) ?></span> <span class="opacity-80">· <?= e(when($c['CreatedAt'])) ?></span><?php if ($c['EditedAt'] !== null): ?> <span class="opacity-80" title="Changed <?= e(when($c['EditedAt'])) ?>">· edited</span><?php endif; ?></p>
+            <?php // Members can click the commenter's name to open the profile; visitors see the plain name. ?>
+            <p class="wrap-anywhere text-sm">
+            <?php if ($loggedIn): ?>
+                <a href="<?= e(url('profile', ['id' => $c['UserID']])) ?>" class="font-bold hover:underline"><?= e($c['Username']) ?></a>
+            <?php else: ?>
+                <span class="font-bold"><?= e($c['Username']) ?></span>
+            <?php endif; ?>
+            <span class="opacity-80">· <?= e(when($c['CreatedAt'])) ?></span><?php if ($c['EditedAt'] !== null): ?> <span class="opacity-80" title="Changed <?= e(when($c['EditedAt'])) ?>">· edited</span><?php endif; ?></p>
             <?php if ($editing): ?>
                 <div id="edit-<?= $cid ?>" class="scroll-mt-24">
                     <?php partial('comment_form', ['postId' => $postId, 'parent' => 0, 'edit' => $cid, 'text' => $ctx['editOld'] ?? $c['CommentText'], 'focus' => true]); ?>

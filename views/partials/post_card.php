@@ -16,7 +16,12 @@ $author = ['UserID' => $p['UserID'], 'FirstName' => $p['AuthorFirstName'], 'Last
         <?= avatar($author, 40) ?>
         <div class="min-w-0 flex-1">
             <?php // Keep the full username visible even when the card is narrow. ?>
-            <p class="break-all font-bold"><?= e($p['AuthorUsername']) ?></p>
+            <?php // A member can click the name to open the profile. Visitors may not open profiles, so for them it stays plain text. ?>
+            <?php if (logged_in()): ?>
+                <p class="break-all font-bold"><a href="<?= e(url('profile', ['id' => $p['UserID']])) ?>" class="hover:underline"><?= e($p['AuthorUsername']) ?></a></p>
+            <?php else: ?>
+                <p class="break-all font-bold"><?= e($p['AuthorUsername']) ?></p>
+            <?php endif; ?>
             <p class="whitespace-nowrap text-sm opacity-80"><?= e(when($p['UploadedAt'])) ?></p>
         </div>
         <?php if ($showStatus): ?>

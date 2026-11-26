@@ -38,7 +38,11 @@ $wide = $wide ?? false;
                 <?php // Just the username, in the same size, beside the avatar. ?>
                 <p class="mt-4 flex items-center justify-center gap-2 sm:justify-start">
                     <?= avatar($maker, 40) ?>
-                    <span class="wrap-anywhere text-lg font-semibold"><?= e($maker['Username']) ?></span>
+                    <?php if (logged_in()): ?>
+                        <a href="<?= e(url('profile', ['id' => $maker['UserID']])) ?>" class="wrap-anywhere text-lg font-semibold hover:underline"><?= e($maker['Username']) ?></a>
+                    <?php else: ?>
+                        <span class="wrap-anywhere text-lg font-semibold"><?= e($maker['Username']) ?></span>
+                    <?php endif; ?>
                 </p>
                 <?php if (!empty($maker['Tagline'])): ?><p class="wrap-anywhere mt-2 text-sm opacity-80"><?= e($maker['Tagline']) ?></p><?php endif; ?>
 

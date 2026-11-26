@@ -58,7 +58,12 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
                 <div class="min-w-0 flex-1">
                     <?php // Long names must fit beside the avatar and action buttons. ?>
                     <p class="wrap-anywhere font-bold"><?= e($post['AuthorFirstName'] . ' ' . $post['AuthorLastName']) ?></p>
-                    <p class="wrap-anywhere text-sm opacity-80">@<?= e($post['AuthorUsername']) ?></p>
+                    <?php // Members can open the author's profile; visitors see the plain name. ?>
+                    <?php if (logged_in()): ?>
+                        <p class="wrap-anywhere text-sm opacity-80"><a href="<?= e(url('profile', ['id' => $post['UserID']])) ?>" class="hover:underline">@<?= e($post['AuthorUsername']) ?></a></p>
+                    <?php else: ?>
+                        <p class="wrap-anywhere text-sm opacity-80">@<?= e($post['AuthorUsername']) ?></p>
+                    <?php endif; ?>
                 </div>
                 <?php if ($mine): ?>
                     <a href="<?= e(url('edit', ['id' => $post['PostID']])) ?>" class="btn rounded-full"><?= icon('pencil', 16) ?> Edit</a>
