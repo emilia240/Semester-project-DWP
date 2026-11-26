@@ -6,7 +6,7 @@ ProfileController  =  the profile page of a member.
          index.php?page=profile                      my own profile
          index.php?page=profile&id=7                 the profile of member number 7
          index.php?page=profile&show=draft           my own posts, only the drafts (also: published, all)
-  edit   edit my own tagline, about text and badge   (members only)
+  edit   edit my own tagline, about text, badge and links   (members only)
          index.php?page=edit-profile
 
 Who may see what. This is checked here in PHP, not just hidden in the view:
@@ -108,12 +108,14 @@ class ProfileController extends BaseController
             $posts = $kept;
         }
 
-        // Step 11: crafts and the follower numbers (the model counts them in the database).
+        // Step 11: crafts, links and the follower numbers (the model reads and counts them in the database).
         $crafts    = [];
+        $links     = [];
         $followers = 0;
         $following = 0;
         if ($hidden === false) {
             $crafts    = $users->craftsOf($profileId);
+            $links     = $users->linksOf($profileId);
             $followers = $users->countFollowers($profileId);
             $following = $users->countFollowing($profileId);
         }
@@ -133,6 +135,7 @@ class ProfileController extends BaseController
             'posts'          => $posts,
             'show'           => $show,
             'crafts'         => $crafts,
+            'links'          => $links,
             'publishedCount' => $publishedCount,
             'followers'      => $followers,
             'following'      => $following,
@@ -171,6 +174,18 @@ class ProfileController extends BaseController
             $old['badge'] = $member['Badge'];
         }
 
+        // The links: the form has 3 fields (link1, link2, link3). They start with the links I have saved.
+        $linkFields = ['link1', 'link2', 'link3'];
+        $savedLinks = $users->linksOf($myId);
+        $position   = 0;
+        foreach ($linkFields as $field) {
+            $old[$field] = '';
+            if (isset($savedLinks[$position])) {
+                $old[$field] = $savedLinks[$position];
+            }
+            $position = $position + 1;
+        }
+
         $errors = [];
 
         // Step 4: the form was sent.
@@ -179,6 +194,9 @@ class ProfileController extends BaseController
             $old['tagline'] = post_str('tagline');
             $old['about']   = post_str('about');
             $old['badge']   = post_str('badge');
+            foreach ($linkFields as $field) {
+                $old[$field] = post_str($field);
+            }
 
             // A browser sends a new line as 2 characters (\r\n) but counts it as 1 in maxlength.
             // We make it 1 as well, so a text the browser accepted is never refused here.
@@ -200,6 +218,23 @@ class ProfileController extends BaseController
                     $errors['badge'] = 'The badge can be at most 30 characters.';
                 }
 
+                // The links. A field with nothing in it is skipped. A filled field must be a real web address.
+                $newLinks = [];
+                foreach ($linkFields as $field) {
+                    if ($old[$field] !== '') {
+                        // Add https:// when the member left it out (instagram.com/me becomes https://instagram.com/me).
+                        $old[$field] = $this->addHttps($old[$field]);
+
+                        if (mb_strlen($old[$field]) > 255) {
+                            $errors[$field] = 'A link can be at most 255 characters.';
+                        } elseif ($this->isWebAddress($old[$field]) === false) {
+                            $errors[$field] = 'This does not look like a web address. Example: instagram.com/yourname';
+                        } else {
+                            $newLinks[] = $old[$field];     // good link: keep it for saving
+                        }
+                    }
+                }
+
                 // Step 7: no errors? Then save. An empty text is saved as NULL (= "not filled in").
                 if (count($errors) === 0) {
                     $tagline = null;
@@ -215,7 +250,11 @@ class ProfileController extends BaseController
                         $badge = $old['badge'];
                     }
 
+                    // A transaction = all or nothing: the texts and the links are saved together, or none of them.
+                    $this->db->beginTransaction();
                     $users->updateProfileTexts($myId, $tagline, $about, $badge);
+                    $users->replaceLinks($myId, $newLinks);
+                    $this->db->commit();
 
                     // Post, Redirect, Get: show a message once and go back to the profile (a refresh does not send the form again).
                     flash_set('success', 'Profile saved.');
@@ -230,6 +269,34 @@ class ProfileController extends BaseController
             'old'    => $old,
             'errors' => $errors,
         ]);
+    }
+
+    // Puts https:// in front of a web address when the member left it out (instagram.com/me becomes https://instagram.com/me).
+    // If the text already has "://" in it, it is left alone: it either starts with http:// or https:// (fine),
+    // or it is another kind of address like ftp:// (isWebAddress() refuses that one).
+    private function addHttps(string $text): string
+    {
+        $hasScheme = str_contains($text, '://');
+        if ($hasScheme === false) {
+            return 'https://' . $text;
+        }
+        return $text;
+    }
+
+    // True when the text is a real web address: it starts with http:// or https:// AND filter_var accepts the rest.
+    // filter_var() with FILTER_VALIDATE_URL checks the text against the rules for a web address and gives false if it breaks them.
+    private function isWebAddress(string $url): bool
+    {
+        $lower    = strtolower($url);       // so HTTPS:// and https:// count the same
+        $hasHttp  = str_starts_with($lower, 'http://');
+        $hasHttps = str_starts_with($lower, 'https://');
+        if ($hasHttp === false && $hasHttps === false) {
+            return false;                   // another kind of address, for example ftp://
+        }
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return false;
+        }
+        return true;
     }
 
     // The id from the address as a whole number, or 0 when it is not a plain number.

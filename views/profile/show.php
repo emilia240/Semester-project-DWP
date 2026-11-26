@@ -9,10 +9,11 @@ Needs:
   $posts           the posts to show (rows from PostModel::forUser), already filtered by $show
   $show            'all', 'published' or 'draft' (only used on my own profile)
   $crafts          the names of the crafts the member picked
+  $links           the web addresses the member put on the profile
   $publishedCount  the number of published posts
   $followers, $following   the follower numbers, $showFollowers = may they be shown
 Everything that comes from the database goes through e().
-Not built yet (it comes in later steps): Follow, Report, social links, the Boards tab.
+Not built yet (it comes in later steps): Follow, Report, the Boards tab.
 */
 $fullName = $member['FirstName'] . ' ' . $member['LastName'];
 ?>
@@ -43,8 +44,9 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
                     <?php endif; ?>
 
                     <?php // The about text is shown as plain text: e() escapes everything, so no bold, italic or links. ?>
+                    <?php // whitespace-pre-line keeps the new lines the member typed (HTML would otherwise join them into one line). ?>
                     <?php if ($member['AboutText'] !== null && $member['AboutText'] !== ''): ?>
-                        <p class="wrap-anywhere mt-3 max-w-2xl text-lg leading-relaxed opacity-85"><?= e($member['AboutText']) ?></p>
+                        <p class="wrap-anywhere mt-3 max-w-2xl whitespace-pre-line text-lg leading-relaxed opacity-85"><?= e($member['AboutText']) ?></p>
                     <?php endif; ?>
 
                     <?php if ($crafts): ?>
@@ -53,6 +55,19 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
                                 <span class="badge badge-lg border-0 bg-base-300"><?= e($craft) ?></span>
                             <?php endforeach; ?>
                         </div>
+                    <?php endif; ?>
+
+                    <?php // The member's own links. data-ext makes the "do you trust this link?" warning open first (app.js). ?>
+                    <?php if ($links): ?>
+                        <ul class="mt-4 flex flex-wrap gap-x-6 gap-y-1">
+                            <?php foreach ($links as $url): ?>
+                                <?php
+                                // Show the address without https:// in front (shorter to read). The link itself keeps the full address.
+                                $shownUrl = str_replace(['https://', 'http://'], '', $url);
+                                ?>
+                                <li><a class="link link-primary wrap-anywhere inline-flex items-center gap-1" href="<?= e($url) ?>" data-ext target="_blank" rel="nofollow noopener noreferrer"><?= icon('link', 14) ?> <?= e($shownUrl) ?></a></li>
+                            <?php endforeach; ?>
+                        </ul>
                     <?php endif; ?>
                 <?php endif; ?>
             </div>

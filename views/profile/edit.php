@@ -1,9 +1,9 @@
 <?php
 /*
-Edit profile: the tagline, the about text and the badge (the "Your profile" card of the daisy design).
-Needs: $old (tagline, about, badge: what the form shows now) and $errors (field name => message).
+Edit profile: the tagline, the about text, the badge and the links (the "Your profile" card of the daisy design).
+Needs: $old (tagline, about, badge, link1, link2, link3: what the form shows now) and $errors (field name => message).
 Everything is checked again in PHP (ProfileController::edit), the maxlength here only helps the person typing.
-Later steps add more to this form: social links (step 3), names (step 6).
+Later steps add more to this form: names (step 6).
 */
 ?>
 <section class="mx-auto max-w-2xl px-4 pb-16 pt-10 sm:px-8">
@@ -35,6 +35,23 @@ Later steps add more to this form: social links (step 3), names (step 6).
             <?= field_error($errors, 'badge') ?>
             <span class="mt-1 block text-sm opacity-80">A little label next to your name. Write whatever describes you.</span>
         </label>
+
+        <?php // The links: three fields. A field you leave empty is skipped. https:// is added for you when you leave it out. ?>
+        <fieldset>
+            <legend class="mb-1 font-bold">Your links</legend>
+            <p class="mb-3 text-sm opacity-80">Your shop, your Instagram, your website. Visitors get a “do you trust this link?” warning before they leave.</p>
+            <div class="space-y-2">
+                <?php
+                $linkFields = ['link1' => 'Link 1', 'link2' => 'Link 2', 'link3' => 'Link 3'];
+                foreach ($linkFields as $field => $label):
+                ?>
+                    <div>
+                        <input class="input input-bordered w-full <?= field_class($errors, $field) ?>" name="<?= e($field) ?>" maxlength="255" value="<?= e($old[$field]) ?>" placeholder="instagram.com/you" aria-label="<?= e($label) ?>"<?= field_attrs($errors, $field) ?>>
+                        <?= field_error($errors, $field) ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </fieldset>
 
         <div class="flex gap-3">
             <button type="submit" class="btn btn-primary rounded-full">Save profile</button>

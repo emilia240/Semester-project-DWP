@@ -102,6 +102,31 @@ class UserModel
         return (int)$stmt->fetchColumn();
     }
 
+    // The links a member has put on the profile (shop, Instagram ...), oldest first. Returns a list of web addresses.
+    public function linksOf(int $userId): array
+    {
+        $stmt = $this->db->prepare('SELECT Url FROM `UserSocialLink` WHERE UserID = :id ORDER BY SocialLinkID');
+        $stmt->execute([':id' => $userId]);
+        $urls = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $urls[] = $row['Url'];
+        }
+        return $urls;
+    }
+
+    // Edit profile: replace ALL links of this member with the new list (an empty list removes them all).
+    // First delete the old rows, then insert the new ones. The controller wraps this in a transaction.
+    public function replaceLinks(int $userId, array $urls): void
+    {
+        $delete = $this->db->prepare('DELETE FROM `UserSocialLink` WHERE UserID = :id');
+        $delete->execute([':id' => $userId]);
+
+        $insert = $this->db->prepare('INSERT INTO `UserSocialLink` (UserID, Url) VALUES (:id, :url)');
+        foreach ($urls as $url) {
+            $insert->execute([':id' => $userId, ':url' => $url]);
+        }
+    }
+
     // Edit profile: save the three texts of the profile. An empty text is saved as NULL (= "not filled in").
     // The WHERE UserID = :id part makes sure only this one member's row is changed.
     public function updateProfileTexts(int $userId, ?string $tagline, ?string $about, ?string $badge): void
