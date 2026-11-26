@@ -89,7 +89,7 @@ Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up
             <p class="font-hand text-3xl leading-none text-accent sm:text-4xl">Good to see you</p>
             <h1 class="mt-3 wrap-anywhere text-4xl font-semibold leading-tight sm:text-5xl">Hello, <?= e($user['FirstName']) ?>!</h1>
             <p class="mt-4 text-base opacity-80">Here is what the community made lately. Got something to show?</p>
-            <div class="mt-6 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post <?= icon('arrow', 16) ?></a><a href="<?= e(url('members')) ?>" class="btn btn-ghost rounded-full">My account</a></div>
+            <div class="mt-6 flex flex-wrap gap-3"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post <?= icon('arrow', 16) ?></a><a href="<?= e(url('profile')) ?>" class="btn btn-ghost rounded-full">My profile</a></div>
         <?php endif; ?>
         </div>
         <?php if ($maker !== null) { partial('maker_card', ['maker' => $maker, 'comments' => $makerComments, 'wide' => $user['RoleName'] !== 'admin']); } ?>

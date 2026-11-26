@@ -1,6 +1,7 @@
 <?php
-/* My account. Needs: $user (the logged-in member, from index.php), $posts, $birthdate (like 1994-02-11) and $settings (the four switches).
+/* Settings > Account. Needs: $user (the logged-in member, from index.php), $posts, $birthdate (like 1994-02-11) and $settings (the four switches).
    This is the "simple user display" from the assignment: name, e-mail, birthdate, role. Only the owner can open this page.
+   It sits inside the Settings layout (the sidebar): see views/partials/settings_open.php.
    Everything from the database goes through e(). */
 
 // The birthdate as a readable date, for example 11 Feb 1994.
@@ -8,13 +9,10 @@ $birthdateText = '';
 if ($birthdate !== '') {
     $birthdateText = date('j M Y', strtotime($birthdate));
 }
+partial('settings_open', ['active' => 'account']);
 ?>
-<section class="mx-auto max-w-3xl px-4 pb-16 pt-12 sm:px-8">
-    <p class="font-hand text-4xl text-accent">Your corner</p>
-    <h1 class="mt-1 text-5xl font-semibold">My account</h1>
-    <p class="mt-3 text-lg opacity-80">Hello <?= e($user['FirstName'] . ' ' . $user['LastName']) ?>. You are in because you are logged in, your e-mail is confirmed and you are not banned.</p>
-
-    <div class="tbh-card mt-8 overflow-x-auto">
+    <div class="tbh-card overflow-x-auto">
+        <h2 class="p-6 pb-2 text-2xl font-semibold">Your details</h2>
         <table class="table">
             <tbody>
                 <tr><th scope="row">Name</th><td><?= e($user['FirstName'] . ' ' . $user['LastName']) ?></td></tr>
@@ -36,7 +34,7 @@ if ($birthdate !== '') {
         ['name' => 'notifications',  'column' => 'NotificationsOn',   'title' => 'Notifications',           'text' => 'Comments, replies and new followers. Never likes.'],
     ];
     ?>
-    <form method="post" action="<?= e(url('save-settings')) ?>" class="tbh-card mt-8 space-y-4 p-6">
+    <form method="post" action="<?= e(url('save-settings')) ?>" class="tbh-card space-y-4 p-6">
         <?= csrf_field() ?>
         <h2 class="text-2xl font-semibold">Privacy and notifications</h2>
         <?php foreach ($switches as $switch): ?>
@@ -58,9 +56,16 @@ if ($birthdate !== '') {
         <button type="submit" class="btn btn-primary rounded-full">Save</button>
     </form>
 
-    <p class="mt-6"><a class="btn btn-outline rounded-full" href="<?= e(url('password')) ?>"><?= icon('lock', 18) ?> Change my password</a></p>
+    <?php // Change password has its own page (it asks for the current password); the sidebar keeps "Account" dark there too. ?>
+    <div class="tbh-card flex flex-wrap items-center justify-between gap-3 p-6">
+        <div>
+            <h2 class="text-2xl font-semibold">Password</h2>
+            <p class="opacity-80">Choose a new one whenever you like.</p>
+        </div>
+        <a class="btn btn-outline rounded-full" href="<?= e(url('password')) ?>"><?= icon('lock', 18) ?> Change my password</a>
+    </div>
 
-    <h2 class="mt-12 font-display text-3xl font-semibold">My posts</h2>
+    <h2 class="mt-6 font-display text-3xl font-semibold">My posts</h2>
     <p class="mt-1 text-sm opacity-80">Drafts are only visible to you.</p>
     <?php if ($posts): ?>
         <div class="mt-6 columns-1 gap-8 sm:columns-2">
@@ -70,4 +75,4 @@ if ($birthdate !== '') {
         <p class="mt-4 opacity-80">You have not posted anything yet.</p>
         <p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make your first post</a></p>
     <?php endif; ?>
-</section>
+<?php partial('settings_close'); ?>

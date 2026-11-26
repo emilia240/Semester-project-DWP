@@ -2,7 +2,7 @@
 /*
 AccountController  =  pages for a logged-in member (index.php already checked that, see the 'member' routes).
 
-  members   "My account": the details we have about you, and the privacy and notification switches
+  members   Settings > Account: the details we have about you, and the privacy and notification switches
   save-settings   saves the four switches (POST only)
   password  change the password while logged in      (FigJam flow: "Change password (logged in)")
 */
@@ -20,7 +20,7 @@ class AccountController extends BaseController
         // The four switches (public profile, show followers, show likes, notifications) with their saved values.
         $settings = $users->settingsOf((int)$this->user['UserID']);
 
-        $this->render('account/index', ['title' => 'My account', 'posts' => $posts, 'birthdate' => $birthdate, 'settings' => $settings]);
+        $this->render('account/index', ['title' => 'Account settings', 'posts' => $posts, 'birthdate' => $birthdate, 'settings' => $settings]);
     }
 
     // =================================================================

@@ -22,8 +22,7 @@ More links (Explore, Create post, notifications, search) are added here when tho
                     <ul tabindex="0" class="menu dropdown-content z-50 mt-3 w-64 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">
                         <li class="menu-title normal-case"><?= e($user['FirstName'] . ' ' . $user['LastName']) ?><br><span class="font-normal opacity-80">@<?= e($user['Username']) ?></span></li>
                         <li><a href="<?= e(url('profile')) ?>"><?= icon('user', 18) ?> My profile</a></li>
-                        <li><a href="<?= e(url('members')) ?>"><?= icon('settings', 18) ?> My account</a></li>
-                        <li><a href="<?= e(url('password')) ?>"><?= icon('lock', 18) ?> Change password</a></li>
+                        <li><a href="<?= e(url('edit-profile')) ?>"><?= icon('settings', 18) ?> Settings</a></li>
                         <?php if ($user['RoleName'] === 'admin'): ?>
                             <li><a href="<?= e(url('admin')) ?>"><?= icon('shield', 18) ?> Admin area</a></li>
                         <?php endif; ?>

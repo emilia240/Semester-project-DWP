@@ -18,8 +18,8 @@
                     <li><a class="link link-hover" href="<?= e(url('join')) ?>">Join us</a></li>
                     <li><a class="link link-hover" href="<?= e(url('login')) ?>">Log in</a></li>
                 <?php else: ?>
-                    <li><a class="link link-hover" href="<?= e(url('members')) ?>">My account</a></li>
-                    <li><a class="link link-hover" href="<?= e(url('password')) ?>">Change password</a></li>
+                    <li><a class="link link-hover" href="<?= e(url('profile')) ?>">My profile</a></li>
+                    <li><a class="link link-hover" href="<?= e(url('edit-profile')) ?>">Settings</a></li>
                 <?php endif; ?>
             </ul>
         </nav>
@@ -34,8 +34,12 @@
         <a href="<?= e(url('login')) ?>" class="<?= $page === 'login' ? 'dock-active' : '' ?>"><?= icon('user', 22) ?><span class="dock-label">Log in</span></a>
         <a href="<?= e(url('join')) ?>" class="<?= $page === 'join' ? 'dock-active' : '' ?>"><?= icon('plus', 22) ?><span class="dock-label">Join</span></a>
     <?php else: ?>
-        <a href="<?= e(url('members')) ?>" class="<?= $page === 'members' ? 'dock-active' : '' ?>"><?= icon('user', 22) ?><span class="dock-label">Account</span></a>
-        <a href="<?= e(url('password')) ?>" class="<?= $page === 'password' ? 'dock-active' : '' ?>"><?= icon('lock', 22) ?><span class="dock-label">Password</span></a>
+        <?php
+        // "Settings" is dark on every page that sits inside the Settings layout.
+        $inSettings = in_array($page, ['edit-profile', 'members', 'password'], true);
+        ?>
+        <a href="<?= e(url('profile')) ?>" class="<?= $page === 'profile' ? 'dock-active' : '' ?>"><?= icon('user', 22) ?><span class="dock-label">Profile</span></a>
+        <a href="<?= e(url('edit-profile')) ?>" class="<?= $inSettings ? 'dock-active' : '' ?>"><?= icon('settings', 22) ?><span class="dock-label">Settings</span></a>
     <?php endif; ?>
 </nav>
 

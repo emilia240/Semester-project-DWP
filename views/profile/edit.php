@@ -4,16 +4,15 @@ Edit profile: the tagline, the about text, the badge and the links (the "Your pr
 Needs: $old (first_name, last_name, username, tagline, about, badge, link1, link2, link3: what the form shows now) and $errors (field name => message).
 Everything is checked again in PHP (ProfileController::edit), the maxlength here only helps the person typing.
 The names (first name, last name, username) use the same rules as sign-up.
+It sits inside the Settings layout (the sidebar): see views/partials/settings_open.php.
 */
+partial('settings_open', ['active' => 'profile']);
 ?>
-<section class="mx-auto max-w-2xl px-4 pb-16 pt-10 sm:px-8">
-    <h1 class="text-5xl font-semibold">Edit profile</h1>
-
     <?php if (isset($errors['form'])): ?>
-        <div class="alert alert-error mt-6" role="alert"><span><?= e($errors['form']) ?></span></div>
+        <div class="alert alert-error" role="alert"><span><?= e($errors['form']) ?></span></div>
     <?php endif; ?>
 
-    <form method="post" action="<?= e(url('edit-profile')) ?>" class="tbh-card mt-8 space-y-5 p-6">
+    <form method="post" action="<?= e(url('edit-profile')) ?>" class="tbh-card space-y-5 p-6">
         <?= csrf_field() ?>
         <h2 class="text-2xl font-semibold">Your profile</h2>
 
@@ -79,4 +78,4 @@ The names (first name, last name, username) use the same rules as sign-up.
             <a class="btn btn-ghost rounded-full" href="<?= e(url('profile')) ?>">View my profile</a>
         </div>
     </form>
-</section>
+<?php partial('settings_close'); ?>
