@@ -139,6 +139,39 @@ class UserModel
         }
     }
 
+    // The four privacy and notification switches of a member (1 = on, 0 = off). Shown on the My account page.
+    public function settingsOf(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT IsProfilePublic, ShowFollowerCount, ShowLikes, NotificationsOn FROM `User` WHERE UserID = :id LIMIT 1'
+        );
+        $stmt->execute([':id' => $userId]);
+        $row = $stmt->fetch();
+        if ($row === false) {
+            // No such member: the same values a new member starts with (everything on).
+            return ['IsProfilePublic' => 1, 'ShowFollowerCount' => 1, 'ShowLikes' => 1, 'NotificationsOn' => 1];
+        }
+        return $row;
+    }
+
+    // My account: save the four switches. Each value is 1 (on) or 0 (off).
+    // The WHERE UserID = :id part makes sure only this one member's row is changed.
+    public function updateSettings(int $userId, int $isPublic, int $showFollowers, int $showLikes, int $notifications): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE `User`
+                SET IsProfilePublic = :public, ShowFollowerCount = :followers, ShowLikes = :likes, NotificationsOn = :notifications
+              WHERE UserID = :id'
+        );
+        $stmt->execute([
+            ':public'        => $isPublic,
+            ':followers'     => $showFollowers,
+            ':likes'         => $showLikes,
+            ':notifications' => $notifications,
+            ':id'            => $userId,
+        ]);
+    }
+
     // Edit profile: save the three texts of the profile. An empty text is saved as NULL (= "not filled in").
     // The WHERE UserID = :id part makes sure only this one member's row is changed.
     public function updateProfileTexts(int $userId, ?string $tagline, ?string $about, ?string $badge): void

@@ -1,5 +1,5 @@
 <?php
-/* My account. Needs: $user (the logged-in member, from index.php), $posts and $birthdate (like 1994-02-11).
+/* My account. Needs: $user (the logged-in member, from index.php), $posts, $birthdate (like 1994-02-11) and $settings (the four switches).
    This is the "simple user display" from the assignment: name, e-mail, birthdate, role. Only the owner can open this page.
    Everything from the database goes through e(). */
 
@@ -26,6 +26,37 @@ if ($birthdate !== '') {
             </tbody>
         </table>
     </div>
+
+    <?php
+    // The four switches. 'name' is the name of the checkbox in the form, 'column' is the column in the User table.
+    $switches = [
+        ['name' => 'is_public',      'column' => 'IsProfilePublic',   'title' => 'Public profile',          'text' => 'When this is off, only you and the admins can open your profile page. Your posts still show in the feed and on Explore.'],
+        ['name' => 'show_likes',     'column' => 'ShowLikes',         'title' => 'Show likes on my posts',  'text' => 'When this is off, nobody sees the like count on your work.'],
+        ['name' => 'show_followers', 'column' => 'ShowFollowerCount', 'title' => 'Show my followers',       'text' => 'Hide the follower numbers on your profile if you prefer.'],
+        ['name' => 'notifications',  'column' => 'NotificationsOn',   'title' => 'Notifications',           'text' => 'Comments, replies and new followers. Never likes.'],
+    ];
+    ?>
+    <form method="post" action="<?= e(url('save-settings')) ?>" class="tbh-card mt-8 space-y-4 p-6">
+        <?= csrf_field() ?>
+        <h2 class="text-2xl font-semibold">Privacy and notifications</h2>
+        <?php foreach ($switches as $switch): ?>
+            <?php
+            // A switch is on (checked) when the saved value is 1.
+            $checked = '';
+            if ((int)$settings[$switch['column']] === 1) {
+                $checked = ' checked';
+            }
+            ?>
+            <label class="flex cursor-pointer items-center justify-between gap-4">
+                <span>
+                    <span class="block font-bold"><?= e($switch['title']) ?></span>
+                    <span class="text-sm opacity-80"><?= e($switch['text']) ?></span>
+                </span>
+                <input type="checkbox" class="toggle toggle-primary" name="<?= e($switch['name']) ?>" value="1"<?= $checked ?>>
+            </label>
+        <?php endforeach; ?>
+        <button type="submit" class="btn btn-primary rounded-full">Save</button>
+    </form>
 
     <p class="mt-6"><a class="btn btn-outline rounded-full" href="<?= e(url('password')) ?>"><?= icon('lock', 18) ?> Change my password</a></p>
 

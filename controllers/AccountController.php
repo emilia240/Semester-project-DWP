@@ -2,7 +2,8 @@
 /*
 AccountController  =  pages for a logged-in member (index.php already checked that, see the 'member' routes).
 
-  members   "My account": the details we have about you
+  members   "My account": the details we have about you, and the privacy and notification switches
+  save-settings   saves the four switches (POST only)
   password  change the password while logged in      (FigJam flow: "Change password (logged in)")
 */
 class AccountController extends BaseController
@@ -16,7 +17,55 @@ class AccountController extends BaseController
         $users     = new UserModel($this->db);
         $birthdate = $users->birthdateOf((int)$this->user['UserID']);
 
-        $this->render('account/index', ['title' => 'My account', 'posts' => $posts, 'birthdate' => $birthdate]);
+        // The four switches (public profile, show followers, show likes, notifications) with their saved values.
+        $settings = $users->settingsOf((int)$this->user['UserID']);
+
+        $this->render('account/index', ['title' => 'My account', 'posts' => $posts, 'birthdate' => $birthdate, 'settings' => $settings]);
+    }
+
+    // =================================================================
+    //   My account -> "Privacy and notifications": four switches (POST only)
+    //   A switch that is on sends a value with the form. A switch that is off sends NOTHING.
+    //   So: sent = on (1), not sent = off (0).
+    //   It always saves for the member in the SESSION (the login), never for an id from the form.
+    // =================================================================
+    public function saveSettings(): void
+    {
+        // Step 1: this address is only for the form. Opening it by typing it in the address bar goes back to My account.
+        if (!is_post()) {
+            redirect_to(url('members'));
+        }
+
+        // Step 2: is the form really from our own page? (CSRF token)
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to(url('members'));
+        }
+
+        // Step 3: read the four switches. isset() asks: was this field sent at all? (Off switches are not sent.)
+        $isPublic      = 0;
+        $showFollowers = 0;
+        $showLikes     = 0;
+        $notifications = 0;
+        if (isset($_POST['is_public'])) {
+            $isPublic = 1;
+        }
+        if (isset($_POST['show_followers'])) {
+            $showFollowers = 1;
+        }
+        if (isset($_POST['show_likes'])) {
+            $showLikes = 1;
+        }
+        if (isset($_POST['notifications'])) {
+            $notifications = 1;
+        }
+
+        // Step 4: save for the logged-in member only, then go back with a message (Post, Redirect, Get).
+        $users = new UserModel($this->db);
+        $users->updateSettings((int)$this->user['UserID'], $isPublic, $showFollowers, $showLikes, $notifications);
+
+        flash_set('success', 'Settings saved.');
+        redirect_to(url('members'));
     }
 
     // =================================================================
