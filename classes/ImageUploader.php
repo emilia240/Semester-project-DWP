@@ -19,6 +19,7 @@ class ImageUploader
     public const MAX_FILE_BYTES = 5 * 1024 * 1024;   // 5 MB per picture
     public const FULL_SIDE      = 1600;              // the picture on the post page: at most 1600 px on the long side
     public const THUMB_WIDTH    = 600;               // the small copy used in the feed
+    public const AVATAR_SIDE    = 256;               // the profile photo: a square of 256 x 256 pixels
     public const JPEG_QUALITY   = 85;
 
     private string $folder;
@@ -91,6 +92,58 @@ class ImageUploader
     */
     public function store($file): string
     {
+        // Steps 1 to 5: all the checks, then the picture is open and ready (see openCheckedPicture below).
+        $resizer = $this->openCheckedPicture($file);
+
+        // ---- 6. save: a new name, always .jpg, a big and a small version ----
+        $this->makeFolder();
+        $base = bin2hex(random_bytes(16));             // 32 random characters: nobody can guess it, and it can never contain ../
+        $name = $base . '.jpg';
+        $thumb = $base . '_t.jpg';
+
+        $resizer->fitInside(self::FULL_SIDE, self::FULL_SIDE);
+        if (!$resizer->save($this->folder . '/' . $name, self::JPEG_QUALITY)) {
+            throw new RuntimeException('Could not write ' . $name);
+        }
+        $resizer->resizeToWidth(self::THUMB_WIDTH);
+        if (!$resizer->save($this->folder . '/' . $thumb, self::JPEG_QUALITY)) {
+            @unlink($this->folder . '/' . $name);
+            throw new RuntimeException('Could not write ' . $thumb);
+        }
+        @chmod($this->folder . '/' . $name, 0644);
+        @chmod($this->folder . '/' . $thumb, 0644);
+
+        return $name;
+    }
+
+    /*
+    storeAvatar() = the same checks as store(), but for a profile photo: ONE square picture of 256 x 256 pixels
+    (cut from the middle), saved with a new random name. Returns the NEW file name.
+    */
+    public function storeAvatar($file): string
+    {
+        // The same steps 1 to 5 as for every other picture.
+        $resizer = $this->openCheckedPicture($file);
+
+        $this->makeFolder();
+        $name = bin2hex(random_bytes(16)) . '.jpg';
+
+        $resizer->cropSquare(self::AVATAR_SIDE);
+        if (!$resizer->save($this->folder . '/' . $name, self::JPEG_QUALITY)) {
+            throw new RuntimeException('Could not write ' . $name);
+        }
+        @chmod($this->folder . '/' . $name, 0644);
+
+        return $name;
+    }
+
+    /*
+    openCheckedPicture() = steps 1 to 5 of the list at the top: is the upload OK, a real upload, not too big, really
+    a picture, and a reasonable picture. Returns an ImageResizer with the picture open, or throws UploadException.
+    store() and storeAvatar() both start here, so the checks exist only ONCE.
+    */
+    private function openCheckedPicture($file): ImageResizer
+    {
         // ---- 1. did PHP get it? ----
         if (!is_array($file) || !isset($file['error']) || !is_int($file['error']) || !isset($file['tmp_name']) || !is_string($file['tmp_name'])) {
             throw new UploadException('The upload did not work. Please try again.');
@@ -135,25 +188,7 @@ class ImageUploader
         $resizer = new ImageResizer();
         $resizer->load($tmp);
 
-        // ---- 6. save: a new name, always .jpg, a big and a small version ----
-        $this->makeFolder();
-        $base = bin2hex(random_bytes(16));             // 32 random characters: nobody can guess it, and it can never contain ../
-        $name = $base . '.jpg';
-        $thumb = $base . '_t.jpg';
-
-        $resizer->fitInside(self::FULL_SIDE, self::FULL_SIDE);
-        if (!$resizer->save($this->folder . '/' . $name, self::JPEG_QUALITY)) {
-            throw new RuntimeException('Could not write ' . $name);
-        }
-        $resizer->resizeToWidth(self::THUMB_WIDTH);
-        if (!$resizer->save($this->folder . '/' . $thumb, self::JPEG_QUALITY)) {
-            @unlink($this->folder . '/' . $name);
-            throw new RuntimeException('Could not write ' . $thumb);
-        }
-        @chmod($this->folder . '/' . $name, 0644);
-        @chmod($this->folder . '/' . $thumb, 0644);
-
-        return $name;
+        return $resizer;
     }
 
     // Delete a picture and its small copy. Only names that look EXACTLY like ours are accepted, so a poisoned

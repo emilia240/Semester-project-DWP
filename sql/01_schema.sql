@@ -117,6 +117,8 @@ CREATE TABLE `User` (
     `AboutText`            TEXT             NULL,
     -- fixed list in PHP, NULL = none
     `Badge`                VARCHAR(30)      NULL,
+    -- file name of the profile photo in uploads/, NULL = no photo (the initials are shown)
+    `AvatarFile`           VARCHAR(40)      NULL,
     -- 1 = public
     `IsProfilePublic`      TINYINT(1)       NOT NULL DEFAULT 1,
     -- 1 = show

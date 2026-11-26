@@ -165,6 +165,20 @@ class ImageResizer
         }
     }
 
+    // Cut a square out of the middle of the picture and make it $side x $side pixels (used for the profile photo).
+    // The long side of the picture loses a strip on both ends, so the shape is never stretched.
+    public function cropSquare(int $side): void
+    {
+        $shortSide = min($this->width(), $this->height());
+        $startX    = (int)round(($this->width() - $shortSide) / 2);     // where the square starts from the left
+        $startY    = (int)round(($this->height() - $shortSide) / 2);    // where the square starts from the top
+
+        $canvas = imagecreatetruecolor($side, $side);
+        imagefill($canvas, 0, 0, imagecolorallocate($canvas, 255, 255, 255));     // white, like in resize()
+        imagecopyresampled($canvas, $this->image, 0, 0, $startX, $startY, $side, $side, $shortSide, $shortSide);
+        $this->image = $canvas;
+    }
+
     // Draw the picture onto a NEW white canvas of the wanted size. White, so a transparent PNG does not turn black in a JPEG.
     private function resize(int $width, int $height): void
     {
