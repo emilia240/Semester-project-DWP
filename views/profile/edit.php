@@ -76,12 +76,25 @@ partial('settings_open', ['active' => 'profile']);
             <?= field_error($errors, 'about') ?>
         </label>
 
-        <label class="block">
-            <span class="mb-1 block font-bold">Badge</span>
-            <input class="input input-bordered w-full sm:w-80 <?= field_class($errors, 'badge') ?>" name="badge" maxlength="30" value="<?= e($old['badge']) ?>" placeholder="e.g. Knitter, or Potion Potter"<?= field_attrs($errors, 'badge') ?>>
-            <?= field_error($errors, 'badge') ?>
-            <span class="mt-1 block text-sm opacity-80">A little label next to your name. Write whatever describes you.</span>
-        </label>
+        <?php
+        // Ideas for a badge. A click on one fills the Badge field (JavaScript, see the block "badge ideas" in app.js).
+        // Every idea is at most 30 characters, the same limit as the field.
+        $badgeIdeas = ['Crocheter', 'Knitter', 'Stitcher', 'Knotter', 'Woodworker', 'Painter', 'Illustrator', 'Potter', 'Beader', 'Curious admirer'];
+        ?>
+        <div>
+            <label class="block">
+                <span class="mb-1 block font-bold">Badge</span>
+                <input id="badge-input" class="input input-bordered w-full sm:w-80 <?= field_class($errors, 'badge') ?>" name="badge" maxlength="30" value="<?= e($old['badge']) ?>" placeholder="e.g. Knitter, or Potion Potter"<?= field_attrs($errors, 'badge') ?>>
+                <?= field_error($errors, 'badge') ?>
+                <span class="mt-1 block text-sm opacity-80">A little label next to your name. Write whatever describes you. Need an idea?</span>
+            </label>
+            <?php // The ideas are outside the label (a button inside a label would be mixed up with the field). They stay hidden until JavaScript shows them, because without JavaScript a click would do nothing. ?>
+            <div class="mt-2 flex flex-wrap gap-2" data-badge-ideas hidden>
+                <?php foreach ($badgeIdeas as $idea): ?>
+                    <button type="button" class="badge badge-lg badge-outline cursor-pointer border-base-300 hover:bg-base-300 focus-visible:outline focus-visible:outline-2" data-fill="badge-input" data-value="<?= e($idea) ?>"><?= e($idea) ?></button>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
         <?php // The links: three fields. A field you leave empty is skipped. https:// is added for you when you leave it out. ?>
         <fieldset>

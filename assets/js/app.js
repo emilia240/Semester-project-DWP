@@ -24,6 +24,20 @@ so every check that matters is repeated in PHP.
         });
     });
 
+    /* ---------- Edit profile: badge ideas (views/profile/edit.php) ----------
+       <div data-badge-ideas hidden> holds buttons <button data-fill="badge-input" data-value="Potter">.
+       A click copies the word into the field whose id is in data-fill. The ideas are hidden in the HTML and shown here,
+       so a visitor without JavaScript does not see buttons that do nothing. */
+    $$('[data-badge-ideas]').forEach(function (box) { box.hidden = false; });
+    $$('[data-fill]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var field = document.getElementById(button.getAttribute('data-fill'));
+            if (!field) { return; }
+            field.value = button.getAttribute('data-value');
+            field.focus();
+        });
+    });
+
     /* ---------- Settings > Appearance (views/account/appearance.php) ----------
        Three choices, all kept in THIS browser (localStorage), nothing goes to the server:
        theme (data-theme-choice), text size (data-text-size) and reduce animations (data-motion-toggle).
