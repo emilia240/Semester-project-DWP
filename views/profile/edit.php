@@ -1,7 +1,7 @@
 <?php
 /*
 Edit profile: the tagline, the about text, the badge and the links (the "Your profile" card of the daisy design).
-Needs: $old (first_name, last_name, username, tagline, about, badge, link1, link2, link3: what the form shows now) and $errors (field name => message).
+Needs: $old (first_name, last_name, username, tagline, about, badge, crafts (the ids), link1, link2, link3: what the form shows now), $allCrafts (every craft: CategoryID, CategoryName) and $errors (field name => message).
 Everything is checked again in PHP (ProfileController::edit), the maxlength here only helps the person typing.
 The names (first name, last name, username) use the same rules as sign-up.
 It sits inside the Settings layout (the sidebar): see views/partials/settings_open.php.
@@ -95,6 +95,28 @@ partial('settings_open', ['active' => 'profile']);
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <?php // The crafts: the same fixed list as join step 2 (no own crafts). Without JavaScript the boxes work too. ?>
+        <fieldset<?= field_attrs($errors, 'crafts') ?>>
+            <legend class="mb-1 font-bold">Crafts you make</legend>
+            <p class="mb-3 text-sm opacity-80">Pick as many as you like, at least one. They shape your feed.</p>
+            <div class="flex flex-wrap gap-2">
+                <?php
+                foreach ($allCrafts as $craft):
+                    // Is this craft one of mine? Then its box starts ticked. in_array = "is this number in the list?"
+                    $ticked = '';
+                    if (in_array((int)$craft['CategoryID'], $old['crafts'], true)) {
+                        $ticked = ' checked';
+                    }
+                ?>
+                    <label class="cursor-pointer">
+                        <input type="checkbox" class="peer sr-only" name="crafts[]" value="<?= (int)$craft['CategoryID'] ?>"<?= $ticked ?>>
+                        <span class="badge badge-lg badge-outline border-base-300 transition peer-checked:border-secondary peer-checked:bg-secondary/20 peer-focus-visible:outline peer-focus-visible:outline-2"><?= e($craft['CategoryName']) ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <?= field_error($errors, 'crafts') ?>
+        </fieldset>
 
         <?php // The links: three fields. A field you leave empty is skipped. https:// is added for you when you leave it out. ?>
         <fieldset>

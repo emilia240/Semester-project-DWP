@@ -31,7 +31,7 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
                     <span class="wrap-anywhere font-bold">@<?= e($member['Username']) ?></span>
                     <?php // The badge is optional: it is empty (NULL) until the member picks one. ?>
                     <?php if ($member['Badge'] !== null && $member['Badge'] !== ''): ?>
-                        <span class="badge badge-sm border-0 bg-base-300 font-semibold"><?= e($member['Badge']) ?></span>
+                        <span class="badge badge-sm border-0 bg-secondary text-secondary-content font-semibold"><?= e($member['Badge']) ?></span>
                     <?php endif; ?>
                     <span class="text-sm opacity-80">Joined <?= e(date('j M Y', strtotime($member['CreatedAt']))) ?></span>
                 </p>

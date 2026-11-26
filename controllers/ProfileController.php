@@ -253,6 +253,12 @@ class ProfileController extends BaseController
             $old['badge'] = $member['Badge'];
         }
 
+        // The crafts: the fixed list of all crafts (the Category table) and the ids of the ones I have picked now.
+        // CategoryModel is the same class that join step 2 uses.
+        $categories    = new CategoryModel($this->db);
+        $allCrafts     = $categories->all();
+        $old['crafts'] = $categories->idsForUser($myId);
+
         // The names start with what is saved now (they can never be empty: sign-up needs them).
         $old['first_name'] = $member['FirstName'];
         $old['last_name']  = $member['LastName'];
@@ -270,7 +276,8 @@ class ProfileController extends BaseController
             $position = $position + 1;
         }
 
-        $errors = [];
+        $errors        = [];
+        $craftsProblem = '';    // stays empty when the crafts are fine; otherwise it holds the message
 
         // Step 4: the form was sent.
         if (is_post()) {
@@ -288,6 +295,23 @@ class ProfileController extends BaseController
                 $old['username']   = post_str('username');
                 foreach ($linkFields as $field) {
                     $old[$field] = post_str($field);
+                }
+
+                // The ticked crafts. A real craft id is one of the ids in the Category table.
+                $validIds = [];
+                foreach ($allCrafts as $craft) {
+                    $validIds[] = (int)$craft['CategoryID'];
+                }
+                $picked = $this->readPickedCrafts($validIds);
+                if ($picked === null) {
+                    // === null means "nothing came back": something in the list was not a real craft id.
+                    $craftsProblem = 'Something in that list was not right. Please choose again.';
+                } else {
+                    $old['crafts'] = $picked;
+                    if (count($picked) === 0) {
+                        // The same rule as join step 2: a member always has at least one craft.
+                        $craftsProblem = 'Please pick at least one craft.';
+                    }
                 }
             }
 
@@ -333,6 +357,11 @@ class ProfileController extends BaseController
                 }
                 if (mb_strlen($old['badge']) > 30) {
                     $errors['badge'] = 'The badge can be at most 30 characters.';
+                }
+
+                // The crafts (read above): a message here means no real crafts or none at all.
+                if ($craftsProblem !== '') {
+                    $errors['crafts'] = $craftsProblem;
                 }
 
                 // The links. A field with nothing in it is skipped. A filled field must be a real web address.
@@ -398,6 +427,9 @@ class ProfileController extends BaseController
                     }
                     $this->db->commit();
 
+                    // The crafts: the same function as in join step 2. It has its own transaction, so it runs after the commit above.
+                    $categories->replaceForUser($myId, $old['crafts']);
+
                     // The database is saved. NOW the old picture file can go (before this, a failure would have lost it).
                     // Did the photo change? Yes when a new one was saved, or when the remove box was ticked.
                     $photoChanged = false;
@@ -424,7 +456,38 @@ class ProfileController extends BaseController
             'title'  => 'Edit profile',
             'old'    => $old,
             'errors' => $errors,
+            'allCrafts' => $allCrafts,
         ]);
+    }
+
+    // Reads the crafts the member ticked in the form (the list crafts[]).
+    // Gives back a list of craft ids, or null when something in the list is not a real craft id.
+    // ?array in the first line means "an array, or null".
+    private function readPickedCrafts(array $validIds): ?array
+    {
+        // ?? = "or, when it is not there:". No box ticked means there is no crafts[] at all, so we start with an empty list.
+        $posted = $_POST['crafts'] ?? [];
+        if (!is_array($posted)) {
+            return null;
+        }
+        $picked = [];
+        foreach ($posted as $value) {
+            // A real id is a text with only digits in it ...
+            if (!is_string($value)) {
+                return null;
+            }
+            if (!ctype_digit($value)) {
+                return null;
+            }
+            // ... and it must be one of the ids in the Category table.
+            $id = (int)$value;
+            if (in_array($id, $validIds, true) === false) {
+                return null;
+            }
+            // The id is also the key, so a craft that is sent twice counts only once.
+            $picked[$id] = $id;
+        }
+        return array_values($picked);
     }
 
     // Puts https:// in front of a web address when the member left it out (instagram.com/me becomes https://instagram.com/me).
