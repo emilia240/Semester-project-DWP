@@ -100,9 +100,38 @@ class PostController extends BaseController
             $reportNotice = $notice;
             unset($_SESSION['report_notice']);
         }
+        // The Follow button next to the author. These two answers are sent to the view:
+        //   $showFollow  = true when the button should be there at all
+        //   $isFollowing = true when I follow the author already (the button then says Unfollow)
+        $showFollow  = false;
+        $isFollowing = false;
+        // On my own post there is no button (nobody follows themselves).
+        if ($this->isOwner($post) === false) {
+            $users  = new UserModel($this->db);
+            $author = $users->findProfile((int)$post['UserID']);
+            if ($author !== null) {
+                // The same rules as the Follow button on the profile page (ProfileController::follow):
+                // a banned member cannot be followed, and a private profile cannot be followed (only an admin may).
+                $authorIsPublic = false;
+                if ((int)$author['IsProfilePublic'] === 1) {
+                    $authorIsPublic = true;
+                }
+                $authorIsBanned = is_banned($author);
+                if ($authorIsBanned === false && ($authorIsPublic || $this->isAdmin())) {
+                    $showFollow = true;
+                }
+            }
+            // Only a logged-in member can already follow someone. A visitor sees the button, but it leads to the login page.
+            if ($showFollow && $this->user !== null) {
+                $isFollowing = $users->isFollowing((int)$this->user['UserID'], (int)$post['UserID']);
+            }
+        }
+
         $this->render('post/show', [
             'title' => $post['PostTitle'],
             'post'  => $post,
+            'showFollow'   => $showFollow,
+            'isFollowing'  => $isFollowing,
             'comments'     => $thread['comments'],
             'commentTotal' => $thread['total'],
             'replyTo'      => $replyTo,

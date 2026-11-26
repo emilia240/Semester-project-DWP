@@ -144,7 +144,7 @@ class ProfileController extends BaseController
     }
 
     // =================================================================
-    //   Follow or unfollow a member   (POST only: the Follow button on a profile)
+    //   Follow or unfollow a member   (POST only: the Follow button on a profile and on a post page)
     //   One button does both: if I follow the member already, it unfollows; if not, it follows.
     //   Who is following is always ME, from the login (the session). The form only says WHOM.
     // =================================================================
@@ -164,6 +164,13 @@ class ProfileController extends BaseController
         $backUrl = url('profile');
         if ($targetId !== 0) {
             $backUrl = url('profile', ['id' => $targetId]);
+        }
+
+        // The Follow button on a post page also sends back_post (the number of that post). Then we go back to the post,
+        // not to the profile. A 0 means the button was not on a post page.
+        $backPostId = $this->readId(post_str('back_post'));
+        if ($backPostId !== 0) {
+            $backUrl = url('post', ['id' => $backPostId]);
         }
 
         // Step 3: is the form really from our own page? (CSRF token)
@@ -218,7 +225,7 @@ class ProfileController extends BaseController
             flash_set('success', 'You now follow @' . $member['Username'] . '.');
         }
 
-        // Post, Redirect, Get: go back to the profile (a refresh does not click the button again).
+        // Post, Redirect, Get: go back to the profile or post (a refresh does not click the button again).
         redirect_to($backUrl);
     }
 

@@ -1,7 +1,7 @@
 <?php
 /*
 One post: the pictures on the left, everything about it on the right.
-Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin),
+Needs: $post (from PostModel::find), $showFollow (show the Follow button), $isFollowing (I follow the author already), $mine (is the logged-in user the owner), $canDelete (owner or admin),
        $savedForm (the form just saved, or null).
 Likes and comments work. Saving and reporting come in later steps.
 Also needs: $comments, $commentTotal, $replyTo, $oldComment, $editId (the comment being edited, or 0), $editOld, and $reportNotice (feedback shown once).
@@ -65,6 +65,29 @@ $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'],
                         <p class="wrap-anywhere text-sm opacity-80">@<?= e($post['AuthorUsername']) ?></p>
                     <?php endif; ?>
                 </div>
+                <?php if ($showFollow): ?>
+                    <?php
+                    // One button: Follow, or Unfollow when I follow the author already (the same look as on the profile page).
+                    $followText  = 'Follow';
+                    $followClass = 'btn btn-primary rounded-full';
+                    if ($isFollowing) {
+                        $followText  = 'Unfollow';
+                        $followClass = 'btn btn-outline rounded-full border-base-300';
+                    }
+                    ?>
+                    <?php if (logged_in()): ?>
+                        <?php // A small form. id = the author. back_post = this post, so after the click we come back here. Who follows is taken from the login. ?>
+                        <form method="post" action="<?= e(url('follow')) ?>">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="id" value="<?= e((string)$post['UserID']) ?>">
+                            <input type="hidden" name="back_post" value="<?= e((string)$post['PostID']) ?>">
+                            <button type="submit" class="<?= e($followClass) ?>"><?= e($followText) ?></button>
+                        </form>
+                    <?php else: ?>
+                        <?php // A visitor cannot follow: the button leads to the login page, and after logging in we come back to this post (like the heart). ?>
+                        <a href="<?= e(url('login', ['back' => $post['PostID']])) ?>" class="<?= e($followClass) ?>"><?= e($followText) ?></a>
+                    <?php endif; ?>
+                <?php endif; ?>
                 <?php if ($mine): ?>
                     <a href="<?= e(url('edit', ['id' => $post['PostID']])) ?>" class="btn rounded-full"><?= icon('pencil', 16) ?> Edit</a>
                 <?php endif; ?>
