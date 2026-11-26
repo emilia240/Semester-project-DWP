@@ -11,6 +11,7 @@ class CommentController extends BaseController
     public const LIMIT_SHORT_SECS = 60;
     public const LIMIT_DAY        = 100;
     private const DOUBLE_CLICK_SECS = 30;
+    public const LIMIT_EDITS      = 10;      // edits per minute
 
     public function add(): void
     {
@@ -67,6 +68,64 @@ class CommentController extends BaseController
 
         $newId = $comments->create($postId, $userId, $parentId > 0 ? $parentId : null, $text);
         redirect_to(url('post', ['id' => $postId]) . '#comment-' . $newId);
+    }
+
+    /*
+    Save a changed text. Only the AUTHOR may edit (the post owner and admins may delete, but not put words in someone's mouth).
+    Checks, in order: POST, CSRF, the comment exists and belongs to a published post, it is yours, the text is valid,
+    and you are not editing in a flood. Nothing changes when the text is the same. Everything goes through the same
+    clean-up and the same 1000 character limit as a new comment.
+    */
+    public function update(): void
+    {
+        if (!is_post()) {
+            redirect_to(url('home'));
+        }
+        $id = ctype_digit(post_str('id')) ? (int)post_str('id') : 0;
+        $comments = new CommentModel($this->db);
+        $comment = $id > 0 ? $comments->find($id) : null;
+
+        if (!csrf_check()) {
+            flash_set('error', 'The form expired. Please try again.');
+            redirect_to($comment !== null ? url('post', ['id' => $comment['PostID']]) . '#comment-' . $id : url('home'));
+        }
+        if ($comment === null || $comment['IsDraft'] || !(int)$comment['AuthorVisible']) {
+            $this->notFound();
+            return;
+        }
+        $me = (int)$this->user['UserID'];
+        if ((int)$comment['UserID'] !== $me) {
+            $this->forbidden();
+            return;
+        }
+
+        $text = $this->clean(post_str('body'));
+        if ($text === '') {
+            $this->failEdit($comment, post_str('body'), 'Please write something first.');
+        }
+        if (mb_strlen($text) > self::MAX_LENGTH) {
+            $this->failEdit($comment, $text, 'A comment can be at most ' . self::MAX_LENGTH . ' characters.');
+        }
+
+        $postUrl = url('post', ['id' => $comment['PostID']]) . '#comment-' . $id;
+        if ($text === $comment['CommentText']) {
+            redirect_to($postUrl);          // nothing changed: no "edited" mark
+        }
+        if ($comments->editsSince($me, 60) >= self::LIMIT_EDITS) {
+            $this->failEdit($comment, $text, 'You are editing very fast. Please wait a minute and try again.');
+        }
+
+        $comments->updateText($id, $text);
+        flash_set('success', 'Your comment was changed.');
+        redirect_to($postUrl);
+    }
+
+    // After a mistake in the edit box: keep what was typed (once) and open the same box again.
+    private function failEdit(array $comment, string $text, string $message): void
+    {
+        flash_set('error', $message);
+        $_SESSION['comment_edit_old'] = ['id' => (int)$comment['CommentID'], 'text' => mb_substr($text, 0, self::MAX_LENGTH + 50)];
+        redirect_to(url('post', ['id' => $comment['PostID'], 'edit' => $comment['CommentID']]) . '#edit-' . $comment['CommentID']);
     }
 
     // Normalize line breaks and remove control characters before storing the text.

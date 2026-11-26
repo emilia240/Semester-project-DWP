@@ -4,7 +4,7 @@ One post: the pictures on the left, everything about it on the right.
 Needs: $post (from PostModel::find), $mine (is the logged-in user the owner), $canDelete (owner or admin),
        $savedForm (the form just saved, or null).
 Likes and comments work. Saving and reporting come in later steps.
-Also needs: $comments, $commentTotal, $replyTo, $oldComment, and $reportNotice (feedback shown once).
+Also needs: $comments, $commentTotal, $replyTo, $oldComment, $editId (the comment being edited, or 0), $editOld, and $reportNotice (feedback shown once).
 */
 $files = array_map(fn($i) => $i['FileName'], $post['images']);
 $cover = $files[0];
@@ -16,6 +16,8 @@ $commentCtx = [
     'postOwnerId' => (int)$post['UserID'],
     'replyTo'     => $replyTo,
     'old'         => $oldComment,
+    'editId'      => $editId,
+    'editOld'     => $editOld,
 ];
 $author = ['UserID' => $post['UserID'], 'FirstName' => $post['AuthorFirstName'], 'LastName' => $post['AuthorLastName']];
 ?>

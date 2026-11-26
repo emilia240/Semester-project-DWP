@@ -362,6 +362,8 @@ CREATE TABLE `Comment` (
     -- max 1000 characters (PHP checks it too)
     `CommentText`     VARCHAR(1000) NOT NULL,
     `CreatedAt`       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- empty until the author changes the text; then the time of the last change
+    `EditedAt`        DATETIME      NULL,
     KEY idx_comment_user (`UserID`),
     KEY idx_comment_parentcomment (`ParentCommentID`),
     -- the comments under one post, in order (also serves the FK on PostID)

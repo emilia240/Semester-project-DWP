@@ -41,6 +41,7 @@ $routes = [
     'delete-post' => ['PostController', 'delete', 'member'],            // POST only
     'like'        => ['LikeController', 'likeOrUnlike', 'member'],            // POST only
     'add-comment' => ['CommentController', 'add', 'member'],                  // POST only
+    'edit-comment' => ['CommentController', 'update', 'member'],              // POST only
     'confirm-delete-comment' => ['CommentController', 'confirmDelete', 'member'],
     'delete-comment' => ['CommentController', 'delete', 'member'],            // POST only
     'report-comment' => ['ReportController', 'comment', 'member'],            // GET shows the form, POST saves it

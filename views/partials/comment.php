@@ -3,7 +3,8 @@
 One comment and its replies (one level), as a list item.
 Needs: $c = a comment row from CommentModel::forPost() (with its 'replies'), $isReply (true for a reply),
        $ctx = the post, viewer, permissions, reply box and old text shared by the comments.
-The author, post owner and admin see Delete. PHP checks their permission again.
+The author sees Edit and Delete; the post owner and admin see Delete. PHP checks their permission again.
+When $ctx['editId'] is this comment, the text is replaced by the edit box (the Edit link opens it, with or without JavaScript).
 Text goes through format_text(): everything is escaped first, then only bold, italic, links and #tags become HTML.
 */
 $isReply   = $isReply ?? false;
@@ -13,22 +14,33 @@ $loggedIn  = $viewerId > 0;
 $replyTo   = (int)$ctx['replyTo'];
 $old       = $ctx['old'];
 $cid       = (int)$c['CommentID'];
+$isAuthor  = $loggedIn && $viewerId === (int)$c['UserID'];
+$editing   = $isAuthor && (int)$ctx['editId'] === $cid;
 $canDelete = $loggedIn && ($viewerId === (int)$c['UserID'] || $viewerId === (int)$ctx['postOwnerId'] || $ctx['isAdmin']);
 ?>
 <li class="<?= $isReply ? 'ml-6 mt-4 sm:ml-10' : 'py-5' ?> scroll-mt-24" id="comment-<?= (int)$c['CommentID'] ?>">
     <div class="flex items-start gap-3">
         <?= avatar($c, $isReply ? 36 : 40) ?>
         <div class="min-w-0 flex-1">
-            <p class="wrap-anywhere text-sm"><span class="font-bold"><?= e($c['Username']) ?></span> <span class="opacity-80">· <?= e(when($c['CreatedAt'])) ?></span></p>
-            <?php // Long words and links wrap instead of stretching the page. ?>
-            <p class="mt-1 wrap-anywhere leading-relaxed"><?= format_text($c['CommentText']) ?></p>
-            <?php // A link opens the reply box even when JavaScript is off. ?>
-            <?php if ($loggedIn): ?>
+            <p class="wrap-anywhere text-sm"><span class="font-bold"><?= e($c['Username']) ?></span> <span class="opacity-80">· <?= e(when($c['CreatedAt'])) ?></span><?php if ($c['EditedAt'] !== null): ?> <span class="opacity-80" title="Changed <?= e(when($c['EditedAt'])) ?>">· edited</span><?php endif; ?></p>
+            <?php if ($editing): ?>
+                <div id="edit-<?= $cid ?>" class="scroll-mt-24">
+                    <?php partial('comment_form', ['postId' => $postId, 'parent' => 0, 'edit' => $cid, 'text' => $ctx['editOld'] ?? $c['CommentText'], 'focus' => true]); ?>
+                </div>
+            <?php else: ?>
+                <?php // Long words and links wrap instead of stretching the page. ?>
+                <p class="mt-1 wrap-anywhere leading-relaxed"><?= format_text($c['CommentText']) ?></p>
+            <?php endif; ?>
+            <?php // Reply, Edit, Report and Delete are links, so they work even when JavaScript is off. ?>
+            <?php if ($loggedIn && !$editing): ?>
                 <div class="mt-1 flex flex-wrap items-center gap-1 text-sm">
                     <?php if (!$isReply): ?>
                         <a href="<?= e(url('post', ['id' => $postId, 'reply' => $cid]) . '#reply-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('reply', 14) ?> Reply</a>
                     <?php endif; ?>
-                    <?php if ($viewerId !== (int)$c['UserID']): ?>
+                    <?php if ($isAuthor): ?>
+                        <?php // Only the author can change the words. The link opens the edit box in place, also without JavaScript. ?>
+                        <a href="<?= e(url('post', ['id' => $postId, 'edit' => $cid]) . '#edit-' . $cid) ?>" class="btn btn-ghost btn-xs gap-1"><?= icon('pencil', 14) ?> Edit</a>
+                    <?php else: ?>
                         <?php // The normal link opens a page; JavaScript opens the same form in a dialog. ?>
                         <a href="<?= e(url('report-comment', ['id' => $cid])) ?>" class="btn btn-ghost btn-xs gap-1" data-report="<?= $cid ?>" aria-label="Report this comment"><?= icon('flag', 14) ?> Report</a>
                     <?php endif; ?>

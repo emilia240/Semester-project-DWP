@@ -27,7 +27,7 @@ class CommentModel
     public function forPost(int $postId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt,
+            'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt, c.EditedAt,
                     u.Username, u.FirstName, u.LastName
                FROM `Comment` c
                JOIN `User` u ON u.UserID = c.UserID
@@ -67,7 +67,7 @@ class CommentModel
     public function find(int $id): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt,
+            'SELECT c.CommentID, c.PostID, c.UserID, c.ParentCommentID, c.CommentText, c.CreatedAt, c.EditedAt,
                     u.Username, p.UserID AS PostOwnerID, p.IsDraft,
                     CASE WHEN ' . self::AUTHOR_OK . ' THEN 1 ELSE 0 END AS AuthorVisible,
                     (SELECT COUNT(*) FROM `Comment` r WHERE r.ParentCommentID = c.CommentID) AS ReplyCount
@@ -93,6 +93,30 @@ class CommentModel
         $stmt->bindValue(':text', $text, PDO::PARAM_STR);
         $stmt->execute();
         return (int)$this->db->lastInsertId();
+    }
+
+    /*
+    Change the text of one comment and remember when. Only the text changes: the author, the post and the place
+    in the thread stay the same, and nobody gets a new notification. The controller has already checked who may do this.
+    */
+    public function updateText(int $id, string $text): void
+    {
+        $stmt = $this->db->prepare('UPDATE `Comment` SET `CommentText` = :t, `EditedAt` = NOW() WHERE `CommentID` = :id');
+        $stmt->bindValue(':t', $text, PDO::PARAM_STR);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    // How many of this member's comments were edited in the last $seconds seconds. For the speed limit on editing.
+    public function editsSince(int $userId, int $seconds): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM `Comment` WHERE `UserID` = :u AND `EditedAt` > (NOW() - INTERVAL :s SECOND)'
+        );
+        $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':s', $seconds, PDO::PARAM_INT);
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
     }
 
     // Delete one comment. The database also removes its replies, likes, reports and notifications.

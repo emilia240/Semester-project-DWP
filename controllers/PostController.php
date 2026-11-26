@@ -50,6 +50,27 @@ class PostController extends BaseController
         }
         // The comments of a published post, as a tree (a draft has none).
         $thread = $post['IsDraft'] ? ['comments' => [], 'total' => 0] : (new CommentModel($this->db))->forPost((int)$post['PostID']);
+        // ?edit=12 opens the edit box in place of comment 12, but only for its author and only when it is visible on this post.
+        $editId = 0;
+        $rawEdit = $_GET['edit'] ?? '';
+        if ($this->user !== null && is_string($rawEdit) && ctype_digit($rawEdit) && strlen($rawEdit) <= 10) {
+            foreach ($thread['comments'] as $c) {
+                foreach (array_merge([$c], $c['replies']) as $x) {
+                    if ((int)$x['CommentID'] === (int)$rawEdit && (int)$x['UserID'] === (int)$this->user['UserID']) {
+                        $editId = (int)$rawEdit;
+                    }
+                }
+            }
+        }
+        // The text of a failed edit comes back once, only into the same comment's box.
+        $editOld = null;
+        $oldEdit = $_SESSION['comment_edit_old'] ?? null;
+        if (is_array($oldEdit)) {
+            if ($editId > 0 && (int)($oldEdit['id'] ?? 0) === $editId && is_string($oldEdit['text'] ?? null)) {
+                $editOld = $oldEdit['text'];
+            }
+            unset($_SESSION['comment_edit_old']);
+        }
         // A reply box only opens for a normal comment visible on this post.
         $replyTo = 0;
         $raw = $_GET['reply'] ?? '';
@@ -68,6 +89,10 @@ class PostController extends BaseController
             $replyTo = (int)($old['parent'] ?? 0) > 0 ? $replyTo : 0;
             unset($_SESSION['comment_old']);
         }
+        // One box at a time: while a comment is being edited, no reply box is open.
+        if ($editId > 0) {
+            $replyTo = 0;
+        }
         // Show report feedback once, only beside the comments on the matching post.
         $reportNotice = null;
         $notice = $_SESSION['report_notice'] ?? null;
@@ -82,6 +107,8 @@ class PostController extends BaseController
             'commentTotal' => $thread['total'],
             'replyTo'      => $replyTo,
             'oldComment'   => $oldComment,
+            'editId'       => $editId,
+            'editOld'      => $editOld,
             'reportNotice' => $reportNotice,
             'mine'  => $this->isOwner($post),
             'canDelete' => $this->isOwner($post) || $this->isAdmin(),
