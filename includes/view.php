@@ -95,6 +95,7 @@ function avatar(array $user, int $size = 40): string
         40 => 'size-10 text-base',
         56 => 'size-14 text-xl',
         64 => 'size-16 text-2xl',
+        120 => 'size-30 text-5xl',
     ];
     $colors = ['bg-[#4a6a3c] text-white', 'bg-[#3f5d85] text-white', 'bg-[#8a5a12] text-white', 'bg-[#a14a26] text-white', 'bg-[#6a4f93] text-white'];
 

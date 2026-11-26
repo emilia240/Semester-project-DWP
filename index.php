@@ -32,6 +32,7 @@ $routes = [
     'logout'      => ['AuthController', 'logout', 'all'],
     'members'     => ['AccountController', 'index', 'member'],
     'password'    => ['AccountController', 'password', 'member'],
+    'profile'     => ['ProfileController', 'show', 'member'],                 // my profile, or ?id= another member's
     'join-crafts'     => ['OnboardingController', 'crafts', 'onboarding'],        // join step 2
     'join-guidelines' => ['OnboardingController', 'guidelines', 'onboarding'],    // join step 3
     'post'        => ['PostController', 'show', 'all'],

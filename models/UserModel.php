@@ -44,6 +44,64 @@ class UserModel
         return $stmt->fetch() ?: null;
     }
 
+    /*
+    One member's profile data for the profile page (ProfileController::show).
+    The e-mail and birthdate are in the row too, but the controller removes them for everybody except the owner.
+    Returns null when there is no member with this id.
+    */
+    public function findProfile(int $userId): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT u.UserID, u.Username, u.FirstName, u.LastName, u.Email, u.Birthdate, r.RoleName,
+                    u.CreatedAt, u.IsBanned, u.BannedUntil,
+                    u.Tagline, u.AboutText, u.Badge, u.IsProfilePublic, u.ShowFollowerCount
+               FROM `User` u
+               JOIN `Role` r ON r.RoleID = u.RoleID
+              WHERE u.UserID = :id
+              LIMIT 1'
+        );
+        $stmt->execute([':id' => $userId]);
+        $row = $stmt->fetch();
+        if ($row === false) {
+            return null;
+        }
+        return $row;
+    }
+
+    // The crafts a member has picked (names, A to Z). Used for the little chips on the profile.
+    public function craftsOf(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT c.CategoryName
+               FROM `UserCategory` uc
+               JOIN `Category` c ON c.CategoryID = uc.CategoryID
+              WHERE uc.UserID = :id
+              ORDER BY c.CategoryName'
+        );
+        $stmt->execute([':id' => $userId]);
+        $names = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $names[] = $row['CategoryName'];
+        }
+        return $names;
+    }
+
+    // How many members follow this member. (Follow = one row per follower. Nobody can follow yet, so it is 0 for now.)
+    public function countFollowers(int $userId): int
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM `Follow` WHERE FollowedID = :id');
+        $stmt->execute([':id' => $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    // How many members this member follows.
+    public function countFollowing(int $userId): int
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM `Follow` WHERE FollowerID = :id');
+        $stmt->execute([':id' => $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
     // Save a new password hash (used when the hash is made stronger at login).
     public function updatePasswordHash(int $userId, string $hash): void
     {
