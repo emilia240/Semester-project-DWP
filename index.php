@@ -33,6 +33,7 @@ $routes = [
     'members'     => ['AccountController', 'index', 'member'],
     'password'    => ['AccountController', 'password', 'member'],
     'profile'     => ['ProfileController', 'show', 'member'],                 // my profile, or ?id= another member's
+    'edit-profile' => ['ProfileController', 'edit', 'member'],                // GET shows the form, POST saves it (my own profile only)
     'join-crafts'     => ['OnboardingController', 'crafts', 'onboarding'],        // join step 2
     'join-guidelines' => ['OnboardingController', 'guidelines', 'onboarding'],    // join step 3
     'post'        => ['PostController', 'show', 'all'],

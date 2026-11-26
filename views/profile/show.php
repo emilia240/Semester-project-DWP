@@ -12,7 +12,7 @@ Needs:
   $publishedCount  the number of published posts
   $followers, $following   the follower numbers, $showFollowers = may they be shown
 Everything that comes from the database goes through e().
-Not built yet (it comes in later steps): Edit profile, Follow, Report, links, the Boards tab.
+Not built yet (it comes in later steps): Follow, Report, social links, the Boards tab.
 */
 $fullName = $member['FirstName'] . ' ' . $member['LastName'];
 ?>
@@ -42,9 +42,9 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
                         <p class="wrap-anywhere mt-4 font-display text-2xl italic leading-snug"><?= e($member['Tagline']) ?></p>
                     <?php endif; ?>
 
-                    <?php // The about text goes through format_text(): it escapes everything first, then allows bold and italic. ?>
+                    <?php // The about text is shown as plain text: e() escapes everything, so no bold, italic or links. ?>
                     <?php if ($member['AboutText'] !== null && $member['AboutText'] !== ''): ?>
-                        <p class="wrap-anywhere mt-3 max-w-2xl text-lg leading-relaxed opacity-85"><?= format_text($member['AboutText']) ?></p>
+                        <p class="wrap-anywhere mt-3 max-w-2xl text-lg leading-relaxed opacity-85"><?= e($member['AboutText']) ?></p>
                     <?php endif; ?>
 
                     <?php if ($crafts): ?>
@@ -61,6 +61,7 @@ $fullName = $member['FirstName'] . ' ' . $member['LastName'];
             <?php if ($isOwn): ?>
                 <div class="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
                     <a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full"><?= icon('plus', 16) ?> New post</a>
+                    <a href="<?= e(url('edit-profile')) ?>" class="btn btn-outline rounded-full border-base-300"><?= icon('pencil', 16) ?> Edit profile</a>
                 </div>
             <?php endif; ?>
         </div>

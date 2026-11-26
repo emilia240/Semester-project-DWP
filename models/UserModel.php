@@ -102,6 +102,21 @@ class UserModel
         return (int)$stmt->fetchColumn();
     }
 
+    // Edit profile: save the three texts of the profile. An empty text is saved as NULL (= "not filled in").
+    // The WHERE UserID = :id part makes sure only this one member's row is changed.
+    public function updateProfileTexts(int $userId, ?string $tagline, ?string $about, ?string $badge): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE `User` SET Tagline = :tagline, AboutText = :about, Badge = :badge WHERE UserID = :id'
+        );
+        $stmt->execute([
+            ':tagline' => $tagline,
+            ':about'   => $about,
+            ':badge'   => $badge,
+            ':id'      => $userId,
+        ]);
+    }
+
     // Save a new password hash (used when the hash is made stronger at login).
     public function updatePasswordHash(int $userId, string $hash): void
     {
