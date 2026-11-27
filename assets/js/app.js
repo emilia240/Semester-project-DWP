@@ -24,6 +24,20 @@ so every check that matters is repeated in PHP.
         });
     });
 
+    /* ---------- Front page: apply the chosen feed sort ----------
+       The form also works without JavaScript using its Apply button. With JavaScript, changing the
+       dropdown sends the form straight away, so the button is no longer needed. */
+    $$('[data-feed-sort]').forEach(function (form) {
+        var select = $('select[name="sort"]', form);
+        var button = $('[data-feed-sort-apply]', form);
+        if (select && button) {
+            select.addEventListener('change', function () {
+                form.requestSubmit();
+            });
+            button.hidden = true;
+        }
+    });
+
     /* ---------- Edit profile: badge ideas (views/profile/edit.php) ----------
        <div data-badge-ideas hidden> holds buttons <button data-fill="badge-input" data-value="Potter">.
        A click copies the word into the field whose id is in data-fill. The ideas are hidden in the HTML and shown here,

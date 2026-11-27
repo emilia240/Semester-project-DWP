@@ -166,32 +166,33 @@ $hasAside = !empty($coolest);
         </div>
 
         <?php if ($tab === 'hot'): ?>
-            <?php // The sort switch: two links. The one I am on looks dark (btn-neutral). ?>
-            <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span class="text-sm font-bold opacity-80" id="sort-label">Sort by</span>
-                <div class="join" role="group" aria-labelledby="sort-label">
+            <?php // A GET form puts the chosen sort in the address, so the feed can be sorted without JavaScript too. ?>
+            <div class="mt-4 flex flex-col items-start gap-2">
+                <form method="get" action="<?= e(url('home') . '#feed') ?>" class="flex flex-wrap items-center gap-2" data-feed-sort>
+                    <?php // GET forms send these fields in the address, so the front controller opens the Hot feed. ?>
+                    <input type="hidden" name="page" value="home">
+                    <input type="hidden" name="tab" value="hot">
+                    <label class="text-sm font-bold opacity-80" for="feed-sort">Sort by</label>
+                    <select id="feed-sort" name="sort" class="select select-bordered select-sm">
                     <?php foreach (['hot' => 'Hot', 'newest' => 'Newest'] as $sortKey => $sortName): ?>
                         <?php
-                        // The "hot" link has no sort in the address (hot is the default). The "newest" link adds sort=newest.
-                        $sortParams = ['tab' => 'hot'];
-                        if ($sortKey === 'newest') {
-                            $sortParams['sort'] = 'newest';
-                        }
-                        $sortClass   = 'btn btn-sm join-item';
-                        $sortCurrent = '';
+                        // The option that matches the current sort is selected when the page opens.
+                        $selected = '';
                         if ($sortKey === $sort) {
-                            $sortClass  .= ' btn-neutral';
-                            $sortCurrent = ' aria-current="true"';
+                            $selected = ' selected';
                         }
                         ?>
-                        <a class="<?= e($sortClass) ?>" href="<?= e(url('home', $sortParams) . '#feed') ?>"<?= $sortCurrent ?>><?= e($sortName) ?></a>
+                        <option value="<?= e($sortKey) ?>"<?= $selected ?>><?= e($sortName) ?></option>
                     <?php endforeach; ?>
-                </div>
+                    </select>
+                    <?php // Without JavaScript, the Apply button sends the selected sort. ?>
+                    <button type="submit" class="btn btn-sm" data-feed-sort-apply>Apply</button>
+                </form>
                 <?php // One short sentence says what the order means. ?>
                 <?php if ($sort === 'newest'): ?>
-                    <span class="text-sm opacity-80">The newest posts first.</span>
+                    <span class="text-xs opacity-70">The newest posts first.</span>
                 <?php else: ?>
-                    <span class="text-sm opacity-80">Most liked and commented lately first.</span>
+                    <span class="text-xs opacity-70">Most liked and commented lately first.</span>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
