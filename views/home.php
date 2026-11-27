@@ -4,8 +4,9 @@ The front page. One address, three versions:
   visitor ($user is null)      big "To be Human" + intro + join buttons
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
-Under the top part: the feed with the tabs "Hot feed" and "Newest", and next to it the box "Coolest this week". The maker of the week sits next to the greeting.
-Needs: $user, $posts (the cards to show), $tab ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
+Under the top part: the feed with the tab "Hot feed", and next to it the box "Coolest this week".
+Inside the Hot feed a small switch sorts by "Hot" or "Newest". The maker of the week sits next to the greeting.
+Needs: $user, $posts (the cards to show), $tab ('hot'), $sort ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
        $maker (the maker of the week, or null: then the card is left out), $makerComments (their post's newest comments, may be empty),
        $pg (the page number), $hasNext (is there a next page?), $atPageLimit,
        and $pins (up to five pictures for the visitor hero).
@@ -120,11 +121,36 @@ $hasAside = !empty($coolest);
     <div class="min-w-0 lg:order-1">
         <h2 id="feed-h" class="sr-only">The feed</h2>
 
+        <?php
+        // The links inside the feed must carry the tab along (and the sort, when it is "newest").
+        $feedParams = ['tab' => $tab];
+        if ($tab === 'hot' && $sort === 'newest') {
+            $feedParams['sort'] = 'newest';
+        }
+        // The links to the previous and the next page: the same, plus the page number.
+        $prevParams       = $feedParams;
+        $prevParams['pg'] = $pg - 1;
+        $nextParams       = $feedParams;
+        $nextParams['pg'] = $pg + 1;
+
+        // The tabs. There is only one for now: the Hot feed.
+        $tabList = ['hot' => 'Hot feed'];
+        ?>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <?php // These tabs are LINKS (each one loads the page again with ?tab=...), so they are a <nav> and not role="tablist". ?>
             <nav class="tabs tabs-border" aria-label="Feed">
-                <a class="tab text-base font-bold <?= $tab === 'hot' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>"<?= $tab === 'hot' ? ' aria-current="page"' : '' ?>>Hot feed</a>
-                <a class="tab text-base font-bold <?= $tab === 'newest' ? 'tab-active' : '' ?>" href="<?= e(url('home', ['tab' => 'newest']) . '#feed') ?>"<?= $tab === 'newest' ? ' aria-current="page"' : '' ?>>Newest</a>
+                <?php foreach ($tabList as $tabKey => $tabName): ?>
+                    <?php
+                    // The tab I am on is marked: it gets the tab-active look and aria-current for screen readers. .= adds text to the end.
+                    $tabClass   = 'tab text-base font-bold';
+                    $tabCurrent = '';
+                    if ($tabKey === $tab) {
+                        $tabClass  .= ' tab-active';
+                        $tabCurrent = ' aria-current="page"';
+                    }
+                    ?>
+                    <a class="<?= e($tabClass) ?>" href="<?= e(url('home', ['tab' => $tabKey]) . '#feed') ?>"<?= $tabCurrent ?>><?= e($tabName) ?></a>
+                <?php endforeach; ?>
             </nav>
 
             <?php // Grid / Single only works with JavaScript, so the buttons start hidden and app.js shows them. ?>
@@ -133,6 +159,37 @@ $hasAside = !empty($coolest);
                 <button type="button" class="btn btn-sm join-item" data-view="single" aria-pressed="false"><?= icon('single', 16) ?> Single</button>
             </div>
         </div>
+
+        <?php if ($tab === 'hot'): ?>
+            <?php // The sort switch: two links. The one I am on looks dark (btn-neutral). ?>
+            <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span class="text-sm font-bold opacity-80" id="sort-label">Sort by</span>
+                <div class="join" role="group" aria-labelledby="sort-label">
+                    <?php foreach (['hot' => 'Hot', 'newest' => 'Newest'] as $sortKey => $sortName): ?>
+                        <?php
+                        // The "hot" link has no sort in the address (hot is the default). The "newest" link adds sort=newest.
+                        $sortParams = ['tab' => 'hot'];
+                        if ($sortKey === 'newest') {
+                            $sortParams['sort'] = 'newest';
+                        }
+                        $sortClass   = 'btn btn-sm join-item';
+                        $sortCurrent = '';
+                        if ($sortKey === $sort) {
+                            $sortClass  .= ' btn-neutral';
+                            $sortCurrent = ' aria-current="true"';
+                        }
+                        ?>
+                        <a class="<?= e($sortClass) ?>" href="<?= e(url('home', $sortParams) . '#feed') ?>"<?= $sortCurrent ?>><?= e($sortName) ?></a>
+                    <?php endforeach; ?>
+                </div>
+                <?php // One short sentence says what the order means. ?>
+                <?php if ($sort === 'newest'): ?>
+                    <span class="text-sm opacity-80">The newest posts first.</span>
+                <?php else: ?>
+                    <span class="text-sm opacity-80">Most liked and commented lately first.</span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
         <?php if ($posts): ?>
             <div class="tbh-feed mt-6 columns-1 gap-8 md:columns-2 <?= $hasAside ? '2xl:columns-3' : 'lg:columns-3' ?>">
@@ -152,11 +209,11 @@ $hasAside = !empty($coolest);
                 <?php // Members: Previous / Next page, and a friendly end. ?>
                 <nav class="mt-6 flex items-center justify-between gap-3" aria-label="Pages of the feed">
                     <?php if ($pg > 1): ?>
-                        <a href="<?= e(url('home', ['tab' => $tab, 'pg' => $pg - 1]) . '#feed') ?>" class="btn rounded-full"><?= icon('back', 16) ?> Previous page</a>
+                        <a href="<?= e(url('home', $prevParams) . '#feed') ?>" class="btn rounded-full"><?= icon('back', 16) ?> Previous page</a>
                     <?php else: ?><span></span><?php endif; ?>
                     <span class="text-sm opacity-80">Page <?= (int)$pg ?></span>
                     <?php if ($hasNext && !$atPageLimit): ?>
-                        <a href="<?= e(url('home', ['tab' => $tab, 'pg' => $pg + 1]) . '#feed') ?>" class="btn btn-primary rounded-full">Next page <?= icon('arrow', 16) ?></a>
+                        <a href="<?= e(url('home', $nextParams) . '#feed') ?>" class="btn btn-primary rounded-full">Next page <?= icon('arrow', 16) ?></a>
                     <?php else: ?><span></span><?php endif; ?>
                 </nav>
                 <?php if ($atPageLimit): ?>
@@ -167,7 +224,7 @@ $hasAside = !empty($coolest);
             <?php endif; ?>
         <?php elseif ($pg > 1): ?>
             <p class="mt-6 text-lg opacity-80">There are no more posts on this page.</p>
-            <p class="mt-4"><a href="<?= e(url('home', ['tab' => $tab]) . '#feed') ?>" class="btn rounded-full">Back to the first page</a></p>
+            <p class="mt-4"><a href="<?= e(url('home', $feedParams) . '#feed') ?>" class="btn rounded-full">Back to the first page</a></p>
         <?php else: ?>
             <p class="mt-6 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
             <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
