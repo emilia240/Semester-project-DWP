@@ -8,9 +8,12 @@ The feed has tabs, a sort and pages. All three come from the address (?tab=hot&s
   tab   must be in a list we write ourselves (anything else silently becomes 'hot')
   sort  must be in a list we write ourselves (anything else silently becomes 'hot')
   pg    must be digits only, and at least 1 (anything else silently becomes 1)
-The tab: only the Hot feed for now (the tabs Boards and Following come in the next step). The sort decides the order inside it:
-  sort=hot     the posts with the most likes and comments lately first (view hot_posts), then the rest, newest first
-  sort=newest  the newest posts first
+The tabs:
+  hot        the Hot feed. The sort decides the order inside it:
+               sort=hot     the posts with the most likes and comments lately first (view hot_posts), then the rest, newest first
+               sort=newest  the newest posts first
+  boards     empty for now (the boards will come later)
+  following  the newest posts of the members I follow (members only: a visitor who asks for it gets the Hot feed)
 An old link with ?tab=newest still works: it opens the Hot feed with sort=newest.
 
 Pages work with LIMIT and OFFSET: page 3 with 12 per page = skip 24 posts, take 12.
@@ -20,7 +23,7 @@ Visitors only get a taste (the first 6 posts, no pages) and a prompt to join.
 */
 class HomeController extends BaseController
 {
-    private const TABS             = ['hot'];
+    private const TABS             = ['hot', 'boards', 'following'];
     private const SORTS            = ['hot', 'newest'];
     private const PER_PAGE_MEMBER  = 12;
     private const PER_PAGE_VISITOR = 6;
@@ -56,13 +59,21 @@ class HomeController extends BaseController
         $pg      = $visitor ? 1 : $pg;
         $offset  = ($pg - 1) * $perPage;
 
+        // Only members follow people, so a visitor cannot open the Following tab: they get the Hot feed.
+        if ($tab === 'following' && $visitor) {
+            $tab = 'hot';
+        }
+
         $model = new PostModel($this->db);
 
-        // Which posts? The sort decides: newest first, or the hot order.
-        if ($sort === 'newest') {
+        // Which posts? One list for each tab. The Boards tab has no posts yet, so its list stays empty.
+        $rows = [];
+        if ($tab === 'hot' && $sort === 'newest') {
             $rows = $model->latest($perPage + 1, $offset, $this->viewerId());
-        } else {
+        } elseif ($tab === 'hot') {
             $rows = $model->hot($perPage + 1, $offset, $this->viewerId());
+        } elseif ($tab === 'following') {
+            $rows = $model->following($this->viewerId(), $perPage + 1, $offset);
         }
         $hasNext = count($rows) > $perPage;
 

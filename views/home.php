@@ -4,9 +4,9 @@ The front page. One address, three versions:
   visitor ($user is null)      big "To be Human" + intro + join buttons
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
-Under the top part: the feed with the tab "Hot feed", and next to it the box "Coolest this week".
+Under the top part: the feed with the tabs "Hot feed", "Boards" and "Following" (members only), and next to it the box "Coolest this week".
 Inside the Hot feed a small switch sorts by "Hot" or "Newest". The maker of the week sits next to the greeting.
-Needs: $user, $posts (the cards to show), $tab ('hot'), $sort ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
+Needs: $user, $posts (the cards to show), $tab ('hot', 'boards' or 'following'), $sort ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
        $maker (the maker of the week, or null: then the card is left out), $makerComments (their post's newest comments, may be empty),
        $pg (the page number), $hasNext (is there a next page?), $atPageLimit,
        and $pins (up to five pictures for the visitor hero).
@@ -133,8 +133,11 @@ $hasAside = !empty($coolest);
         $nextParams       = $feedParams;
         $nextParams['pg'] = $pg + 1;
 
-        // The tabs. There is only one for now: the Hot feed.
-        $tabList = ['hot' => 'Hot feed'];
+        // The tabs. Visitors get Hot feed and Boards. Members also get Following.
+        $tabList = ['hot' => 'Hot feed', 'boards' => 'Boards'];
+        if ($user !== null) {
+            $tabList['following'] = 'Following';
+        }
         ?>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <?php // These tabs are LINKS (each one loads the page again with ?tab=...), so they are a <nav> and not role="tablist". ?>
@@ -153,11 +156,13 @@ $hasAside = !empty($coolest);
                 <?php endforeach; ?>
             </nav>
 
-            <?php // Grid / Single only works with JavaScript, so the buttons start hidden and app.js shows them. ?>
-            <div class="join hidden" role="group" aria-label="View" data-view-group>
-                <button type="button" class="btn btn-sm join-item btn-neutral" data-view="grid" aria-pressed="true"><?= icon('grid', 16) ?> Grid</button>
-                <button type="button" class="btn btn-sm join-item" data-view="single" aria-pressed="false"><?= icon('single', 16) ?> Single</button>
-            </div>
+            <?php // Grid / Single only works with JavaScript, so the buttons start hidden and app.js shows them. The Boards tab has no posts to switch. ?>
+            <?php if ($tab !== 'boards'): ?>
+                <div class="join hidden" role="group" aria-label="View" data-view-group>
+                    <button type="button" class="btn btn-sm join-item btn-neutral" data-view="grid" aria-pressed="true"><?= icon('grid', 16) ?> Grid</button>
+                    <button type="button" class="btn btn-sm join-item" data-view="single" aria-pressed="false"><?= icon('single', 16) ?> Single</button>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if ($tab === 'hot'): ?>
@@ -191,7 +196,16 @@ $hasAside = !empty($coolest);
             </div>
         <?php endif; ?>
 
-        <?php if ($posts): ?>
+        <?php if ($tab === 'boards'): ?>
+            <?php // Boards are not built yet: an empty tab with a friendly note. ?>
+            <div class="tbh-card mt-8 p-10 text-center">
+                <p class="font-display text-2xl font-semibold">Boards are coming soon</p>
+                <p class="mx-auto mt-2 max-w-md opacity-80">Soon you can collect the posts you love on boards of your own, and look at the boards other makers have made.</p>
+            </div>
+        <?php elseif ($posts): ?>
+            <?php if ($tab === 'following'): ?>
+                <p class="mt-5 font-display text-xl italic opacity-80">Makers you love and cherish in this community.</p>
+            <?php endif; ?>
             <div class="tbh-feed mt-6 columns-1 gap-8 md:columns-2 <?= $hasAside ? '2xl:columns-3' : 'lg:columns-3' ?>">
                 <?php foreach ($posts as $p) { partial('post_card', ['p' => $p, 'back' => 'home']); } ?>
             </div>
@@ -225,6 +239,13 @@ $hasAside = !empty($coolest);
         <?php elseif ($pg > 1): ?>
             <p class="mt-6 text-lg opacity-80">There are no more posts on this page.</p>
             <p class="mt-4"><a href="<?= e(url('home', $feedParams) . '#feed') ?>" class="btn rounded-full">Back to the first page</a></p>
+        <?php elseif ($tab === 'following'): ?>
+            <?php // Nobody followed yet, or the people I follow have not posted. ?>
+            <div class="tbh-card mt-8 p-10 text-center">
+                <p class="font-display text-2xl font-semibold">Nothing here yet</p>
+                <p class="mx-auto mt-2 max-w-md opacity-80">Follow a maker with the Follow button on their profile or next to their name on a post, and their new work shows up here.</p>
+                <a href="<?= e(url('home', ['tab' => 'hot']) . '#feed') ?>" class="btn btn-primary mt-5 rounded-full">Go to the Hot feed</a>
+            </div>
         <?php else: ?>
             <p class="mt-6 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
             <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>

@@ -87,6 +87,19 @@ class PostModel
         );
     }
 
+    /*
+    The "Following" tab: the newest posts of the members I follow.
+    The Follow table has one row per follow (FollowerID follows FollowedID). The JOIN keeps only the posts whose author
+    is followed by me (:viewer). The same hiding rules as the rest of the front page (no drafts, no active bans).
+    */
+    public function following(int $viewerId, int $limit, int $offset = 0): array
+    {
+        return $this->cards(
+            self::FEED_WHERE, [':viewer' => $viewerId], $limit, $offset, $viewerId,
+            'JOIN `Follow` f ON f.FollowedID = p.UserID AND f.FollowerID = :viewer'
+        );
+    }
+
     // Count this member's new posts, including drafts, for the posting limit.
     // CreatedAt never changes when a draft is published. NOW() uses the same database clock.
     // idx_post_user_created helps the database find this member's recent posts.
