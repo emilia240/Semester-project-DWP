@@ -2,7 +2,7 @@
 /*
 The top bar of every normal page. Visitors and members see different buttons.
 $user = the logged-in user (array) or null.   $page = the name of the current page.
-More links (Explore, Create post, notifications, search) are added here when those pages exist.
+More links (notifications, search) are added here when those pages exist.
 */
 ?>
 <header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/90 backdrop-blur">
@@ -12,6 +12,15 @@ More links (Explore, Create post, notifications, search) are added here when tho
         </div>
 
         <div class="navbar-end ml-auto w-auto flex-1 gap-1 sm:gap-2">
+            <?php
+            // The Explore link. On a phone it lives in the bottom bar, so here it only shows from a medium screen up.
+            // The link of the page I am on is bold and underlined, so I can see where I am. .= adds text to the end.
+            $exploreClass = 'btn btn-ghost hidden md:inline-flex';
+            if ($page === 'explore') {
+                $exploreClass .= ' font-bold underline decoration-2 underline-offset-8';
+            }
+            ?>
+            <a href="<?= e(url('explore')) ?>" class="<?= e($exploreClass) ?>"><?= icon('compass', 18) ?> Explore</a>
             <?php if ($user === null): ?>
                 <a href="<?= e(url('login')) ?>" class="btn btn-ghost">Log in</a>
                 <a href="<?= e(url('join')) ?>" class="btn btn-primary rounded-full">Join us</a>

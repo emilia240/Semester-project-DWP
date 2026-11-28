@@ -22,6 +22,7 @@ require_once 'includes/init.php';
 
 $routes = [
     'home'        => ['HomeController', 'index', 'all'],
+    'explore'     => ['ExploreController', 'index', 'all'],                   // the Explore wall (everybody; a visitor only gets a taste)
     'login'       => ['AuthController', 'login', 'guest'],
     'join'        => ['AuthController', 'join', 'guest'],
     'check-inbox' => ['AuthController', 'checkInbox', 'guest'],

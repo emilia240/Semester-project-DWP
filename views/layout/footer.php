@@ -14,6 +14,7 @@
             <h2 class="font-sans text-xs font-bold uppercase tracking-widest opacity-80"><?= $user === null ? 'Come in' : 'You' ?></h2>
             <ul class="mt-3 space-y-2">
                 <li><a class="link link-hover" href="<?= e(url('home')) ?>">Home</a></li>
+                <li><a class="link link-hover" href="<?= e(url('explore')) ?>">Explore</a></li>
                 <?php if ($user === null): ?>
                     <li><a class="link link-hover" href="<?= e(url('join')) ?>">Join us</a></li>
                     <li><a class="link link-hover" href="<?= e(url('login')) ?>">Log in</a></li>
@@ -30,6 +31,7 @@
 <!-- bottom bar on a phone (daisyUI "dock") -->
 <nav class="dock dock-md z-40 border-t border-base-300 bg-base-100 md:hidden" aria-label="Main">
     <a href="<?= e(url('home')) ?>" class="<?= $page === 'home' ? 'dock-active' : '' ?>"><?= icon('home', 22) ?><span class="dock-label">Home</span></a>
+    <a href="<?= e(url('explore')) ?>" class="<?= $page === 'explore' ? 'dock-active' : '' ?>"><?= icon('compass', 22) ?><span class="dock-label">Explore</span></a>
     <?php if ($user === null): ?>
         <a href="<?= e(url('login')) ?>" class="<?= $page === 'login' ? 'dock-active' : '' ?>"><?= icon('user', 22) ?><span class="dock-label">Log in</span></a>
         <a href="<?= e(url('join')) ?>" class="<?= $page === 'join' ? 'dock-active' : '' ?>"><?= icon('plus', 22) ?><span class="dock-label">Join</span></a>
