@@ -77,13 +77,31 @@ class PostModel
     A SQL view is a saved query. hot_posts supplies the score without storing it again.
     LEFT JOIN keeps posts missing from the view; COALESCE gives those posts a score of zero.
     The view uses idx_postlike_post_liked and idx_comment_post_created for recent activity.
+
+    $craftsFirst = true puts the posts in MY crafts (the crafts I ticked on my profile, table UserCategory) before all the others.
+    Inside each of the two groups the order stays: hottest first, then newest.
     */
-    public function hot(int $limit, int $offset = 0, int $viewerId = 0): array
+    public function hot(int $limit, int $offset = 0, int $viewerId = 0, bool $craftsFirst = false): array
     {
+        $order  = 'COALESCE(h.HotScore, 0) DESC, p.UploadedAt DESC, p.PostID DESC';
+        $params = [];
+
+        // Only a logged-in member (id above 0) has crafts. && means "and also".
+        if ($craftsFirst && $viewerId > 0) {
+            // EXISTS gives 1 when the post has at least one craft that I also picked, and 0 when not. DESC puts the 1s first.
+            // This text is written here in this file (never user input). The member id travels in the parameter :craftuser.
+            $myCraftsSql = 'EXISTS (SELECT 1
+                                      FROM `PostCategory` pc
+                                      JOIN `UserCategory` uc ON uc.CategoryID = pc.CategoryID
+                                     WHERE pc.PostID = p.PostID AND uc.UserID = :craftuser)';
+            $order = $myCraftsSql . ' DESC, ' . $order;
+            $params[':craftuser'] = $viewerId;
+        }
+
         return $this->cards(
-            self::FEED_WHERE, [], $limit, $offset, $viewerId,
+            self::FEED_WHERE, $params, $limit, $offset, $viewerId,
             'LEFT JOIN `hot_posts` h ON h.PostID = p.PostID',
-            'COALESCE(h.HotScore, 0) DESC, p.UploadedAt DESC, p.PostID DESC'
+            $order
         );
     }
 

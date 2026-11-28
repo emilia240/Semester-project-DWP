@@ -10,7 +10,9 @@ The feed has tabs, a sort and pages. All three come from the address (?tab=hot&s
   pg    must be digits only, and at least 1 (anything else silently becomes 1)
 The tabs:
   hot        the Hot feed. The sort decides the order inside it:
-               sort=hot     the posts with the most likes and comments lately first (view hot_posts), then the rest, newest first
+               sort=hot     for a member: the posts in the crafts I picked first, then the rest. Inside each group the posts with the
+                            most likes and comments lately come first (view hot_posts), then the newest.
+                            For a visitor: the most liked and commented lately first.
                sort=newest  the newest posts first
   boards     empty for now (the boards will come later)
   following  the newest posts of the members I follow (members only: a visitor who asks for it gets the Hot feed)
@@ -71,7 +73,8 @@ class HomeController extends BaseController
         if ($tab === 'hot' && $sort === 'newest') {
             $rows = $model->latest($perPage + 1, $offset, $this->viewerId());
         } elseif ($tab === 'hot') {
-            $rows = $model->hot($perPage + 1, $offset, $this->viewerId());
+            // true = the posts in the crafts I picked come first (a visitor has no crafts, so for a visitor nothing changes).
+            $rows = $model->hot($perPage + 1, $offset, $this->viewerId(), true);
         } elseif ($tab === 'following') {
             $rows = $model->following($this->viewerId(), $perPage + 1, $offset);
         }

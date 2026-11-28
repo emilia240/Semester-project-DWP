@@ -191,6 +191,9 @@ $hasAside = !empty($coolest);
                 <?php // One short sentence says what the order means. ?>
                 <?php if ($sort === 'newest'): ?>
                     <span class="text-xs opacity-70">The newest posts first.</span>
+                <?php elseif ($user !== null): ?>
+                    <?php // A member's Hot feed starts with the posts in the crafts they picked on their profile. ?>
+                    <span class="text-xs opacity-70">Posts in your crafts first, then the most liked and commented lately.</span>
                 <?php else: ?>
                     <span class="text-xs opacity-70">Most liked and commented lately first.</span>
                 <?php endif; ?>
