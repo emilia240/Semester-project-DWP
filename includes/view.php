@@ -91,6 +91,7 @@ style="width: 40px" in the HTML. The colour depends on the user id, so a person 
 function avatar(array $user, int $size = 40): string
 {
     $sizes = [
+        24 => 'size-6 text-[10px]',
         36 => 'size-9 text-sm',
         40 => 'size-10 text-base',
         56 => 'size-14 text-xl',
