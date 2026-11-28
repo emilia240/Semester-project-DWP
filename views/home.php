@@ -5,7 +5,7 @@ The front page. One address, three versions:
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
 Under the top part: the feed with the tabs "Hot feed", "Boards" and "Following" (members only), and next to it the box "Coolest this week".
-Inside the Hot feed buttons sort by "Hot" or "Newest". A member also sees the craft chips "Your categories" there. The maker of the week sits next to the greeting.
+Inside the Hot feed buttons sort by "Hot" or "Newest". A member also sees the craft chips "Your chosen categories" there, with a link to change them. The maker of the week sits next to the greeting.
 Needs: $user, $posts (the cards to show), $tab ('hot', 'boards' or 'following'), $sort ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
        $maker (the maker of the week, or null: then the card is left out), $makerComments (their post's newest comments, may be empty),
        $chips (the craft chips of a member: name, on or off, link), $pickedIds (the ticked craft ids), $clearUrl (the Hot feed without ticks),
@@ -176,7 +176,11 @@ $hasAside = !empty($coolest);
             <?php // The craft chips: one for each craft I picked on my profile. Clicking one ticks or unticks it. ?>
             <?php if (count($chips) > 0): ?>
                 <div class="min-w-0">
-                    <p class="mb-2 text-sm font-bold opacity-80" id="craft-chips-h">Your categories</p>
+                    <div class="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <p class="text-sm font-bold opacity-80" id="craft-chips-h">Your chosen categories</p>
+                        <?php // The chips only filter this page. The crafts themselves are changed on Edit profile, so this link goes to that box. ?>
+                        <a href="<?= e(url('edit-profile') . '#crafts') ?>" class="link link-primary text-sm">Change them here</a>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="craft-chips-h">
                         <?php foreach ($chips as $chip): ?>
                             <?php

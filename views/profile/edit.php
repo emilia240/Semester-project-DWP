@@ -97,7 +97,8 @@ partial('settings_open', ['active' => 'profile']);
         </div>
 
         <?php // The crafts: the same fixed list as join step 2 (no own crafts). Without JavaScript the boxes work too. ?>
-        <fieldset<?= field_attrs($errors, 'crafts') ?>>
+        <?php // id="crafts" lets the link "Change them here" on the front page jump straight to this box. ?>
+        <fieldset id="crafts" class="scroll-mt-24"<?= field_attrs($errors, 'crafts') ?>>
             <legend class="mb-1 font-bold">Crafts you make</legend>
             <p class="mb-3 text-sm opacity-80">Pick as many as you like, at least one. They shape your feed.</p>
             <div class="flex flex-wrap gap-2">
