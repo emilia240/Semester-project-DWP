@@ -8,6 +8,7 @@ The feed has tabs, a sort and pages. All three come from the address (?tab=hot&s
   tab   must be in a list we write ourselves (anything else silently becomes 'hot')
   sort  must be in a list we write ourselves (anything else silently becomes 'hot')
   pg    must be digits only, and at least 1 (anything else silently becomes 1)
+  cat   the selected crafts of a member (?cat[]=3&cat[]=7). Only real craft ids are kept, everything else is ignored.
 The tabs:
   hot        the Hot feed. The sort decides the order inside it:
                sort=hot     for a member: the posts in the crafts I picked first, then the rest. Inside each group the posts with the
@@ -16,6 +17,8 @@ The tabs:
                sort=newest  the newest posts first
   boards     empty for now (the boards will come later)
   following  the newest posts of the members I follow (members only: a visitor who asks for it gets the Hot feed)
+The craft chips ("Your categories") sit on the Hot feed of a member. One chip for each craft the member picked on their profile.
+Click a chip to tick it: the feed then shows ONLY posts that have one of the ticked crafts. Nothing ticked = the normal feed.
 An old link with ?tab=newest still works: it opens the Hot feed with sort=newest.
 
 Pages work with LIMIT and OFFSET: page 3 with 12 per page = skip 24 posts, take 12.
@@ -68,13 +71,51 @@ class HomeController extends BaseController
 
         $model = new PostModel($this->db);
 
+        // The craft choices: only for a member, only on the Hot feed. Everyone else gets an empty list = no choices, no filter.
+        // ! means "not": !$visitor reads "not a visitor", so a member.
+        $chips     = [];
+        $pickedIds = [];
+        if ($tab === 'hot' && !$visitor) {
+            $craftModel = new CategoryModel($this->db);
+            $allCrafts  = $craftModel->all();
+            $myCraftIds = $craftModel->idsForUser($this->viewerId());
+            $pickedIds  = $this->readPickedCrafts($allCrafts);
+
+            // One chip for each craft I picked on my profile. 'on' = the chip is ticked right now.
+            foreach ($allCrafts as $craft) {
+                $craftId = (int)$craft['CategoryID'];
+                if (!in_array($craftId, $myCraftIds, true)) {
+                    continue;    // not one of my crafts: no chip
+                }
+                $isOn = in_array($craftId, $pickedIds, true);
+
+                // The ticked list AFTER a click on this chip: a ticked chip leaves the list, an unticked chip joins it.
+                // !== means "not exactly equal".
+                $afterClick = [];
+                foreach ($pickedIds as $pickedId) {
+                    if ($pickedId !== $craftId) {
+                        $afterClick[] = $pickedId;
+                    }
+                }
+                if (!$isOn) {
+                    $afterClick[] = $craftId;
+                }
+
+                $chips[] = [
+                    'name' => $craft['CategoryName'],
+                    'on'   => $isOn,
+                    'href' => $this->hotFeedUrl($sort, $afterClick),
+                ];
+            }
+        }
+
         // Which posts? One list for each tab. The Boards tab has no posts yet, so its list stays empty.
         $rows = [];
         if ($tab === 'hot' && $sort === 'newest') {
-            $rows = $model->latest($perPage + 1, $offset, $this->viewerId());
+            $rows = $model->latest($perPage + 1, $offset, $this->viewerId(), $pickedIds);
         } elseif ($tab === 'hot') {
             // true = the posts in the crafts I picked come first (a visitor has no crafts, so for a visitor nothing changes).
-            $rows = $model->hot($perPage + 1, $offset, $this->viewerId(), true);
+            $rows = $model->hot($perPage + 1, $offset, $this->viewerId(), true, $pickedIds);
         } elseif ($tab === 'following') {
             $rows = $model->following($this->viewerId(), $perPage + 1, $offset);
         }
@@ -90,6 +131,9 @@ class HomeController extends BaseController
             'atPageLimit' => !$visitor && $pg === self::MAX_PAGE && $hasNext,
             'tab'     => $tab,
             'sort'    => $sort,
+            'chips'     => $chips,
+            'pickedIds' => $pickedIds,
+            'clearUrl'  => $this->hotFeedUrl($sort, []),
             'pg'      => $pg,
             'coolest' => $model->coolest($this->viewerId()),
             'maker'   => $maker,
@@ -98,5 +142,47 @@ class HomeController extends BaseController
             // Only visitors need the five hottest posts for the hero pictures.
             'pins'    => $visitor ? $model->hot(5) : [],
         ]);
+    }
+
+    // The address of the Hot feed with the sort and with the given ticked craft ids. Used by the chips and by "Clear".
+    private function hotFeedUrl(string $sort, array $craftIds): string
+    {
+        $query = ['tab' => 'hot'];
+        if ($sort === 'newest') {
+            $query['sort'] = 'newest';
+        }
+        if (count($craftIds) > 0) {
+            $query['cat'] = $craftIds;
+        }
+        return url('home', $query) . '#feed';
+    }
+
+    // Read ?cat[]=... from the address. The address is user input, so we only keep ids that are REAL crafts.
+    // $allCrafts = the rows from CategoryModel::all(). Anything that is not a real craft id is silently left out.
+    private function readPickedCrafts(array $allCrafts): array
+    {
+        $fromAddress = $_GET['cat'] ?? [];      // ?? [] means: no cat in the address = an empty list
+        if (!is_array($fromAddress)) {
+            return [];
+        }
+
+        $realIds = [];
+        foreach ($allCrafts as $craft) {
+            $realIds[] = (int)$craft['CategoryID'];
+        }
+
+        $picked = [];
+        foreach ($fromAddress as $value) {
+            // Only text made of digits can be an id. || means "or" and ! means "not": skip it when it is not text, or not digits, or too long.
+            // (int) turns the text "7" into the number 7.
+            if (!is_string($value) || !ctype_digit($value) || strlen($value) > 4) {
+                continue;
+            }
+            $craftId = (int)$value;
+            if (in_array($craftId, $realIds, true)) {
+                $picked[$craftId] = $craftId;     // using the id as the key removes doubles (same craft twice)
+            }
+        }
+        return array_values($picked);
     }
 }

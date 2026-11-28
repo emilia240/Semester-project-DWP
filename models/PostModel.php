@@ -67,9 +67,40 @@ class PostModel
     private const FEED_WHERE = 'WHERE p.IsDraft = 0 AND (u.IsBanned = 0 OR u.BannedUntil <= NOW())';
 
     // The newest published posts, one row per post with its cover picture.
-    public function latest(int $limit, int $offset = 0, int $viewerId = 0): array
+    // $onlyCrafts = the ticked crafts (a list of craft ids). Empty list = no filter.
+    public function latest(int $limit, int $offset = 0, int $viewerId = 0, array $onlyCrafts = []): array
     {
-        return $this->cards(self::FEED_WHERE, [], $limit, $offset, $viewerId);
+        $filter = $this->craftFilter($onlyCrafts);
+        return $this->cards($filter['where'], $filter['params'], $limit, $offset, $viewerId);
+    }
+
+    /*
+    The craft filter on the Hot feed: "only posts that have at least one of these crafts".
+    It returns the WHERE text and the parameters that belong to it, like this:  ['where' => '...', 'params' => [':craft0' => 3]]
+    One parameter name for each craft id (:craft0, :craft1 ...), because a list inside IN (...) needs one ? or :name per value.
+    The ids come from the address, but the controller has already checked that each one is a real craft id.
+    PostCategory is the junction table Post M:N Category. EXISTS = "there is at least one row that fits".
+    */
+    private function craftFilter(array $craftIds): array
+    {
+        $where  = self::FEED_WHERE;
+        $params = [];
+
+        // No ticked crafts: the normal feed, nothing is added.
+        if (count($craftIds) === 0) {
+            return ['where' => $where, 'params' => $params];
+        }
+
+        $names = [];
+        foreach ($craftIds as $position => $craftId) {
+            $name          = ':craft' . $position;
+            $names[]       = $name;
+            $params[$name] = $craftId;
+        }
+        // implode joins the names with commas:  :craft0,:craft1
+        $where .= ' AND EXISTS (SELECT 1 FROM `PostCategory` k WHERE k.PostID = p.PostID AND k.CategoryID IN (' . implode(',', $names) . '))';
+
+        return ['where' => $where, 'params' => $params];
     }
 
     /*
@@ -80,11 +111,13 @@ class PostModel
 
     $craftsFirst = true puts the posts in MY crafts (the crafts I ticked on my profile, table UserCategory) before all the others.
     Inside each of the two groups the order stays: hottest first, then newest.
+    $onlyCrafts = the ticked crafts (a list of craft ids). Empty list = no filter.
     */
-    public function hot(int $limit, int $offset = 0, int $viewerId = 0, bool $craftsFirst = false): array
+    public function hot(int $limit, int $offset = 0, int $viewerId = 0, bool $craftsFirst = false, array $onlyCrafts = []): array
     {
         $order  = 'COALESCE(h.HotScore, 0) DESC, p.UploadedAt DESC, p.PostID DESC';
-        $params = [];
+        $filter = $this->craftFilter($onlyCrafts);
+        $params = $filter['params'];
 
         // Only a logged-in member (id above 0) has crafts. && means "and also".
         if ($craftsFirst && $viewerId > 0) {
@@ -99,7 +132,7 @@ class PostModel
         }
 
         return $this->cards(
-            self::FEED_WHERE, $params, $limit, $offset, $viewerId,
+            $filter['where'], $params, $limit, $offset, $viewerId,
             'LEFT JOIN `hot_posts` h ON h.PostID = p.PostID',
             $order
         );

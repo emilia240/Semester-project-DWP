@@ -5,9 +5,10 @@ The front page. One address, three versions:
   member                       "Hello, <first name>!"
   admin (RoleName = admin)     "Hi Boss" + a button to the admin area
 Under the top part: the feed with the tabs "Hot feed", "Boards" and "Following" (members only), and next to it the box "Coolest this week".
-Inside the Hot feed a small switch sorts by "Hot" or "Newest". The maker of the week sits next to the greeting.
+Inside the Hot feed buttons sort by "Hot" or "Newest". A member also sees the craft chips "Your categories" there. The maker of the week sits next to the greeting.
 Needs: $user, $posts (the cards to show), $tab ('hot', 'boards' or 'following'), $sort ('hot' or 'newest'), $coolest (up to 4 cards for "Coolest this week"),
        $maker (the maker of the week, or null: then the card is left out), $makerComments (their post's newest comments, may be empty),
+       $chips (the craft chips of a member: name, on or off, link), $pickedIds (the ticked craft ids), $clearUrl (the Hot feed without ticks),
        $pg (the page number), $hasNext (is there a next page?), $atPageLimit,
        and $pins (up to five pictures for the visitor hero).
 */
@@ -127,6 +128,10 @@ $hasAside = !empty($coolest);
         if ($tab === 'hot' && $sort === 'newest') {
             $feedParams['sort'] = 'newest';
         }
+        // The ticked crafts must stay ticked on the next and the previous page. count() = how many are in the list.
+        if ($tab === 'hot' && count($pickedIds) > 0) {
+            $feedParams['cat'] = $pickedIds;
+        }
         // The links to the previous and the next page: the same, plus the page number.
         $prevParams       = $feedParams;
         $prevParams['pg'] = $pg - 1;
@@ -145,7 +150,7 @@ $hasAside = !empty($coolest);
                 <?php foreach ($tabList as $tabKey => $tabName): ?>
                     <?php
                     // The tab I am on is marked: it gets the tab-active look and aria-current for screen readers. .= adds text to the end.
-                    $tabClass   = 'tab text-base font-bold';
+                    $tabClass   = 'tab text-base font-bold first:pl-0';
                     $tabCurrent = '';
                     if ($tabKey === $tab) {
                         $tabClass  .= ' tab-active';
@@ -166,27 +171,58 @@ $hasAside = !empty($coolest);
         </div>
 
         <?php if ($tab === 'hot'): ?>
-            <?php // A GET form puts the chosen sort in the address, so the feed can be sorted without JavaScript too. ?>
-            <div class="mt-4 flex flex-col items-start gap-2">
-                <form method="get" action="<?= e(url('home') . '#feed') ?>" class="flex flex-wrap items-center gap-2" data-feed-sort>
+            <?php // Separate the filters from the tabs above and the posts below. ?>
+            <div class="mt-5 flex flex-col gap-5 border-y border-base-300 py-5">
+            <?php // The craft chips: one for each craft I picked on my profile. Clicking one ticks or unticks it. ?>
+            <?php if (count($chips) > 0): ?>
+                <div class="min-w-0">
+                    <p class="mb-2 text-sm font-bold opacity-80" id="craft-chips-h">Your categories</p>
+                    <div class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="craft-chips-h">
+                        <?php foreach ($chips as $chip): ?>
+                            <?php
+                            // Both states use the theme colour. A ticked chip is filled and has a check mark.
+                            $chipClass = 'btn btn-sm whitespace-nowrap rounded-full btn-outline btn-primary';
+                            if ($chip['on']) {
+                                $chipClass = 'btn btn-sm whitespace-nowrap rounded-full btn-primary';
+                            }
+                            ?>
+                            <a href="<?= e($chip['href']) ?>" class="<?= e($chipClass) ?>">
+                                <?php if ($chip['on']): ?><?= icon('check', 14) ?><span class="sr-only">Selected: </span><?php endif; ?>
+                                <?= e($chip['name']) ?>
+                            </a>
+                        <?php endforeach; ?>
+                        <?php if (count($pickedIds) > 0): ?>
+                            <a href="<?= e($clearUrl) ?>" class="btn btn-sm btn-ghost rounded-full"><?= icon('x', 14) ?> Clear</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            <?php // The heading sits above the sort buttons, like the category heading above the chips. ?>
+            <div>
+                <p class="mb-2 text-sm font-bold opacity-80" id="feed-sort-heading">Sort by</p>
+                <?php // The buttons and their explanation share a row when there is enough room. ?>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <?php // A GET form keeps sorting available without JavaScript. ?>
+                <form method="get" action="<?= e(url('home') . '#feed') ?>" class="flex flex-wrap items-center gap-2" aria-labelledby="feed-sort-heading">
                     <?php // GET forms send these fields in the address, so the front controller opens the Hot feed. ?>
                     <input type="hidden" name="page" value="home">
                     <input type="hidden" name="tab" value="hot">
-                    <label class="text-sm font-bold opacity-80" for="feed-sort">Sort by</label>
-                    <select id="feed-sort" name="sort" class="select select-bordered select-sm">
+                    <?php // The ticked crafts stay ticked when the sort changes. ?>
+                    <?php foreach ($pickedIds as $pickedId): ?>
+                        <input type="hidden" name="cat[]" value="<?= (int)$pickedId ?>">
+                    <?php endforeach; ?>
                     <?php foreach (['hot' => 'Hot', 'newest' => 'Newest'] as $sortKey => $sortName): ?>
                         <?php
-                        // The option that matches the current sort is selected when the page opens.
-                        $selected = '';
+                        // The current sort has a filled button, so it is easy to recognise.
+                        $sortClass = 'btn btn-sm btn-outline rounded-full';
+                        $pressed = 'false';
                         if ($sortKey === $sort) {
-                            $selected = ' selected';
+                            $sortClass = 'btn btn-sm btn-neutral rounded-full';
+                            $pressed = 'true';
                         }
                         ?>
-                        <option value="<?= e($sortKey) ?>"<?= $selected ?>><?= e($sortName) ?></option>
+                        <button type="submit" name="sort" value="<?= e($sortKey) ?>" class="<?= e($sortClass) ?>" aria-pressed="<?= e($pressed) ?>"><?= e($sortName) ?></button>
                     <?php endforeach; ?>
-                    </select>
-                    <?php // Without JavaScript, the Apply button sends the selected sort. ?>
-                    <button type="submit" class="btn btn-sm" data-feed-sort-apply>Apply</button>
                 </form>
                 <?php // One short sentence says what the order means. ?>
                 <?php if ($sort === 'newest'): ?>
@@ -197,6 +233,9 @@ $hasAside = !empty($coolest);
                 <?php else: ?>
                     <span class="text-xs opacity-70">Most liked and commented lately first.</span>
                 <?php endif; ?>
+                </div>
+            </div>
+
             </div>
         <?php endif; ?>
 
@@ -243,6 +282,13 @@ $hasAside = !empty($coolest);
         <?php elseif ($pg > 1): ?>
             <p class="mt-6 text-lg opacity-80">There are no more posts on this page.</p>
             <p class="mt-4"><a href="<?= e(url('home', $feedParams) . '#feed') ?>" class="btn rounded-full">Back to the first page</a></p>
+        <?php elseif ($tab === 'hot' && count($pickedIds) > 0): ?>
+            <?php // The ticked crafts have no posts yet. ?>
+            <div class="tbh-card mt-8 p-10 text-center">
+                <p class="font-display text-2xl font-semibold">Nothing here yet</p>
+                <p class="mx-auto mt-2 max-w-md opacity-80">No posts match the crafts you ticked. Try another craft, or clear the ticks.</p>
+                <a href="<?= e($clearUrl) ?>" class="btn btn-primary mt-5 rounded-full">Clear</a>
+            </div>
         <?php elseif ($tab === 'following'): ?>
             <?php // Nobody followed yet, or the people I follow have not posted. ?>
             <div class="tbh-card mt-8 p-10 text-center">
