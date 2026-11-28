@@ -1,12 +1,49 @@
 <?php
 /*
-The Explore page: a wall of cover photos to browse. Step 1 = the newest posts of everybody, with pages.
-Needs: $user (null = a visitor), $posts (the cards to show), $pg (the page number), $hasNext (is there a next page?), $atPageLimit.
+The Explore page: a wall of cover photos to browse, newest first, with pages. The craft chips on top filter the wall.
+Needs: $user (null = a visitor), $posts (the cards to show), $pg (the page number), $hasNext (is there a next page?), $atPageLimit,
+       $chips (one chip for every craft: name, on or off, link), $pickedIds (the ticked craft ids), $clearUrl (Explore without ticks).
 */
 ?>
 <section class="mx-auto max-w-[120rem] px-4 pb-16 pt-6 sm:px-16 md:px-24 lg:px-40" aria-labelledby="explore-h">
     <?php // Keep the page heading for screen readers, without showing it above the photos. ?>
     <h1 id="explore-h" class="sr-only">Explore</h1>
+
+    <?php // The craft chips: every craft. A click ticks or unticks it, and the wall shows only posts with a ticked craft. The row scrolls sideways when it is too long. ?>
+    <div class="mt-6 scroll-mt-24" id="explore-crafts">
+        <p class="mb-2 text-sm font-bold opacity-80" id="explore-crafts-h">Browse by craft</p>
+        <div class="flex gap-2 overflow-x-auto pb-2" role="group" aria-labelledby="explore-crafts-h">
+            <?php if (count($pickedIds) > 0): ?>
+                <a href="<?= e($clearUrl) ?>" class="btn btn-sm btn-ghost whitespace-nowrap rounded-full"><?= icon('x', 14) ?> Clear</a>
+            <?php endif; ?>
+            <?php foreach ($chips as $chip): ?>
+                <?php
+                // Same look as the chips on the front page: both states use the theme colour. A ticked chip is filled and has a check mark.
+                // 'relative' keeps the hidden "Selected:" text inside the chip. Without it the text sits outside the sideways-scrolling row and makes the whole page scroll sideways on a phone.
+                $chipClass = 'btn btn-sm whitespace-nowrap relative rounded-full btn-outline btn-primary';
+                if ($chip['on']) {
+                    $chipClass = 'btn btn-sm whitespace-nowrap relative rounded-full btn-primary';
+                }
+                ?>
+                <a href="<?= e($chip['href']) ?>" class="<?= e($chipClass) ?>">
+                    <?php if ($chip['on']): ?><?= icon('check', 14) ?><span class="sr-only">Selected: </span><?php endif; ?>
+                    <?= e($chip['name']) ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <?php
+    // The page links must keep the ticked crafts. The list goes into the address as cat[]=3&cat[]=7.
+    $pageParams = [];
+    if (count($pickedIds) > 0) {
+        $pageParams['cat'] = $pickedIds;
+    }
+    $prevParams = $pageParams;
+    $prevParams['pg'] = $pg - 1;
+    $nextParams = $pageParams;
+    $nextParams['pg'] = $pg + 1;
+    ?>
 
     <?php if ($posts): ?>
         <?php // The wall: each cover photo is a tile. A tile keeps the real shape of its photo (tall, wide or square), so the wall looks uneven, like a stone wall. ?>
@@ -53,11 +90,11 @@ Needs: $user (null = a visitor), $posts (the cards to show), $pg (the page numbe
             <?php // Members: Previous / Next page, and a friendly end. ?>
             <nav class="mt-6 flex items-center justify-between gap-3" aria-label="Pages of the wall">
                 <?php if ($pg > 1): ?>
-                    <a href="<?= e(url('explore', ['pg' => $pg - 1])) ?>" class="btn rounded-full"><?= icon('back', 16) ?> Previous page</a>
+                    <a href="<?= e(url('explore', $prevParams)) ?>" class="btn rounded-full"><?= icon('back', 16) ?> Previous page</a>
                 <?php else: ?><span></span><?php endif; ?>
                 <span class="text-sm opacity-80">Page <?= (int)$pg ?></span>
                 <?php if ($hasNext && !$atPageLimit): ?>
-                    <a href="<?= e(url('explore', ['pg' => $pg + 1])) ?>" class="btn btn-primary rounded-full">Next page <?= icon('arrow', 16) ?></a>
+                    <a href="<?= e(url('explore', $nextParams)) ?>" class="btn btn-primary rounded-full">Next page <?= icon('arrow', 16) ?></a>
                 <?php else: ?><span></span><?php endif; ?>
             </nav>
             <?php if ($atPageLimit): ?>
@@ -69,7 +106,14 @@ Needs: $user (null = a visitor), $posts (the cards to show), $pg (the page numbe
     <?php elseif ($pg > 1): ?>
         <?php // A page number that is too high: nothing on this page. ?>
         <p class="mt-8 text-lg opacity-80">There are no more posts on this page.</p>
-        <p class="mt-4"><a href="<?= e(url('explore')) ?>" class="btn rounded-full">Back to the first page</a></p>
+        <p class="mt-4"><a href="<?= e(url('explore', $pageParams)) ?>" class="btn rounded-full">Back to the first page</a></p>
+    <?php elseif (count($pickedIds) > 0): ?>
+        <?php // The ticked crafts have no posts yet. ?>
+        <div class="tbh-card mt-8 p-10 text-center">
+            <p class="font-display text-2xl font-semibold">Nothing here yet</p>
+            <p class="mx-auto mt-2 max-w-md opacity-80">No posts match the crafts you ticked. Try another craft, or clear the ticks.</p>
+            <a href="<?= e($clearUrl) ?>" class="btn btn-primary mt-5 rounded-full">Clear</a>
+        </div>
     <?php else: ?>
         <p class="mt-8 text-lg opacity-80">No posts yet. <?= $user === null ? 'Be the first one, join us!' : 'Be the first one!' ?></p>
         <?php if ($user !== null): ?><p class="mt-4"><a href="<?= e(url('create')) ?>" class="btn btn-primary rounded-full">Make a post</a></p><?php endif; ?>
